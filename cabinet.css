@@ -33,6 +33,7 @@
   color: #11121a;
   background: #fff;
   --sky: linear-gradient(180deg, #4a4e6a 0, #afbde2 27%, #fff 77%);
+  --control-corner: .95rem;
   --width: 78rem;
 }
 * { box-sizing: border-box; }
@@ -44,7 +45,7 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: .18rem sol
 button { cursor: pointer; }
 p, h1, h2 { margin: 0; }
 h1, h2 { font-family: var(--display-face); font-weight: 400; letter-spacing: normal; }
-.wrap { width: min(100%, var(--width)); padding-inline: clamp(1.25rem, 4.5vw, 4rem); margin-inline: auto; }
+.wrap { width: min(100%, var(--width)); padding-inline: clamp(min(1.25rem, 6.25vw), 4.5vw, 4rem); margin-inline: auto; }
 .sign-in-page { display: flex; flex-direction: column; min-block-size: 100svh; }
 .cover { background: var(--sky); }
 .hero { container-type: inline-size; padding-inline: clamp(20px, 4.5vw, 4rem); padding-block: clamp(2rem, 7vw, 5rem) clamp(2rem, 6vw, 4rem); text-align: center; }
@@ -53,12 +54,17 @@ h1, h2 { font-family: var(--display-face); font-weight: 400; letter-spacing: nor
 .hero h1 { margin-top: clamp(2.5rem, 10vw, 5rem); font-size: min(.15rem + 11cqi, 11.9cqi, 7rem); line-height: 1; text-transform: uppercase; overflow-wrap: anywhere; }
 .hero p { margin-top: clamp(1rem, 3vw, 1.5rem); font-size: clamp(1rem, .85rem + .7vw, 1.5rem); line-height: 1.2; text-transform: uppercase; }
 .login-section { flex: 1; background: linear-gradient(#fff, #d9e1f3); padding: 1rem clamp(20px, 4.5vw, 4rem) 3rem; }
-.login-card { background: #e8ebf3; border-radius: .5rem; max-width: 35rem; margin: 0 auto; padding: clamp(1.5rem, 5vw, 4rem) clamp(24px, 5vw, 4rem); }
+.login-card { background: #e8ebf3; max-width: 35rem; margin: 0 auto; padding: clamp(1.5rem, 5vw, 4rem) clamp(24px, 5vw, 4rem); }
 .word-group { display: inline-block; max-inline-size: 100%; }
 .login-card h2 { font-size: clamp(1.32rem, 1rem + 1.2vw, 2rem); line-height: 1.12; margin-bottom: clamp(1.35rem, 2.5vw, 1.85rem); text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
 .login-card label { display: block; margin: 1.15rem 0 .5rem; }
-.login-card input { display: block; min-height: 3.15rem; width: 100%; padding: .7rem .85rem; color: #11121a; background: white; border: 1px solid #70798a; border-radius: .35rem; }
-.primary { display: inline-flex; align-items: center; justify-content: center; padding: .85rem 1.3rem; min-height: 3rem; color: #fff; background: #161722; text-align: center; text-decoration: none; border-radius: .35rem; border: 1px solid #161722; }
+.login-card input { display: block; min-height: 3.15rem; width: 100%; padding: .7rem .85rem; color: #11121a; background: white; border: 1px solid #70798a; }
+/* Offset the visible letters within the original hit area. */
+.primary, .masthead button, .score-choice span {
+  --label-shift: .07em;
+  padding-block: calc(var(--control-inset) + var(--label-shift)) calc(var(--control-inset) - var(--label-shift));
+}
+.primary { --control-inset: .85rem; display: inline-flex; align-items: center; justify-content: center; padding-inline: 1.3rem; min-height: 3rem; color: #fff; background: #161722; text-align: center; text-decoration: none; border: 1px solid #161722; }
 .primary:hover { background: #32374d; }
 .login-card .primary { margin-top: 1.15rem; width: 100%; }
 .form-error { color: #8e1130; margin-top: 1rem; line-height: 1.4; }
@@ -88,7 +94,7 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
 }
 .masthead-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem 1.5rem; padding-block: 1rem; }
 .masthead img { width: min(56%, 20rem); }
-.masthead button { background: transparent; color: inherit; border: 1px solid currentColor; border-radius: .3rem; padding: .55rem .95rem; min-height: 2.75rem; }
+.masthead button { --control-inset: .55rem; background: transparent; color: inherit; border: 1px solid currentColor; padding-inline: .95rem; min-height: 2.75rem; }
 .scene, body:has(.masthead) { background: linear-gradient(#cbd6ef, #fff min(34rem, 70vh)); }
 .scene { min-height: 82vh; }
 .masthead + .scene { background: transparent; }
@@ -109,6 +115,7 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
 .ballot h2 { margin-inline-start: clamp(-.055em, 1.2px - .29cqi, 0px); font-size: clamp(1.5rem, 1.12rem + 1.6vw, 2.4rem); line-height: 1.12; }
 .ballot small { font-size: .9rem; font-weight: normal; }
 .ballot .scale { margin: .5rem 0; }
+.ballot .scale[open] { margin-block-end: 1.65em; }
 .scale > summary, .ballot-rules { padding-block: .65rem; cursor: pointer; width: fit-content; min-height: 2.75rem; }
 .scale > summary {
   display: grid;
@@ -147,13 +154,19 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
 }
 .ballot-rules { display: inline-block; }
 .scale-values li {
-  display: grid;
-  grid-template-columns: .7em .88em minmax(0, 1fr);
+  display: flex;
   align-items: baseline;
-  column-gap: .28em;
+  column-gap: .22em;
 }
+.scale-number { flex: 0 0 1ch; }
+.scale-values li > [aria-hidden] { flex: none; }
+.scale-values li > :last-child { flex: 1; min-inline-size: 0; }
+@container (max-width: 14em) {
+  .scale-body { hyphens: auto; hyphenate-limit-chars: 8 3 3; }
+}
+.scale-values li + li { margin-block-start: .15em; }
 .scale-explanation { display: block; margin: .2em 0 .55em; }
-.scale-number, .rubric-weights { font-variant-numeric: tabular-nums; }
+.scale-number, .rubric-weights, .score-choice { font-variant-numeric: tabular-nums; }
 .rubric-weights { width: 100%; border-collapse: collapse; text-align: start; }
 .rubric-weights :is(th, td) { text-align: start; vertical-align: baseline; padding: .4em .55em .4em 0; }
 .rubric-weights tr > :first-child, .rubric-weights tr > :last-child { width: 1%; white-space: nowrap; overflow-wrap: normal; }
@@ -165,6 +178,7 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
 .scale li, .scale p, .criterion-help { line-height: 1.5; }
 .criterion-help, .ballot-note { max-inline-size: 68ch; }
 .scale p { margin-bottom: .8rem; }
+.scale-body > :last-child { margin-block-end: 0; }
 .ballot-fields, .criterion { padding: 0; margin: 0; border: 0; min-width: 0; }
 .ballot form { margin-top: 1.35rem; }
 .criterion { margin-bottom: 1.8rem; }
@@ -174,21 +188,22 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
 .score-choices { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .65rem; }
 .score-choice { position: relative; cursor: pointer; }
 .score-choice input, .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.score-choice span { display: grid; place-items: center; min-width: 2.75rem; min-height: 2.75rem; padding: .45rem; color: #161722; background: #fff; border: 1px solid #747b8d; border-radius: .3rem; }
+.score-choice span { --control-inset: .45rem; --label-shift: .045em; display: grid; place-items: center; min-width: 2.75rem; min-height: 2.75rem; padding-inline: var(--control-inset); color: #161722; background: #fff; border: 1px solid #747b8d; }
 .score-choice input:checked + span { color: #fff; background: #20263a; border-color: #20263a; }
 .score-choice input:focus-visible + span, .ballot summary:focus-visible, .ballot textarea:focus-visible { outline: .18rem solid #315cc0; outline-offset: .15rem; }
 .no-site { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; width: fit-content; line-height: 1.4; }
 .no-site input { margin: 0; }
 .comment-label { display: block; margin-bottom: .5rem; }
 .ballot textarea { display: block; width: 100%; max-width: 39rem; min-height: 5rem; padding: .75rem; font: inherit; color: inherit; background: #fff; border: 1px solid #747b8d; border-radius: .35rem; resize: vertical; }
+.materials .primary, .save-ballot { --label-shift: 0px; }
 .save-ballot { margin-top: 1rem; }
 .ballot-note, .ballot-feedback:not(:empty) { margin-top: .8rem; line-height: 1.4; }
-.secondary { margin-top: .5rem; min-height: 2.75rem; padding: .55rem .85rem; color: #161722; background: #fff; border: 1px solid #747b8d; border-radius: .3rem; }
+.secondary { margin-top: .5rem; min-height: 2.75rem; padding: .55rem .85rem; color: #161722; background: #fff; border: 1px solid #747b8d; }
 .ballot button:disabled { cursor: default; }
-.scale .guide-list { list-style: disc; padding-inline-start: 1.3rem; }
+.scale .guide-list { margin-block-end: 1.25em; list-style: disc; padding-inline-start: 1.3rem; }
 .guide-list li + li { margin-top: .45rem; }
 .ballot .nominations { margin-top: 1.5rem; }
-.nominations section + section { margin-block-start: 1.35rem; }
+.nominations section + section { margin-block-start: 1.65em; }
 .nominations h3, .nominations h4 {
   margin: 0 0 .3em;
   font: 400 clamp(1.05rem, .96rem + .45vw, 1.3rem) / 1.2 var(--display-face);
@@ -197,4 +212,30 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
 .nominations p { margin: 0; }
 .nominations p + p { margin-top: .35em; }
 .nominations h4 { font-family: inherit; }
-.ballot-sources { display: flex; flex-wrap: wrap; gap: 0 1.4rem; }
+
+/* The curve meets each straight edge with zero curvature. */
+:is(.login-card, .login-card input, .primary, .masthead button, .secondary, .score-choice span) {
+  --corner-extent: var(--control-corner);
+  border-radius: var(--corner-extent);
+  corner-shape: superellipse(1.7);
+}
+
+form.login-card { --corner-extent: clamp(1.5rem, 2.35vw, 2rem); }
+
+/* WebKit versions without corner-shape draw the same contour in nine slices.
+   The corners keep their proportions as fields, captions and the panel resize. */
+@supports not (corner-shape: superellipse(1.7)) {
+  @media screen and (forced-colors: none) {
+    .login-card { --corner-frame: url('./control-corners.svg#panel'); }
+    .login-card input { --corner-frame: url('./control-corners.svg#field'); }
+    .primary { --corner-frame: url('./control-corners.svg#primary'); }
+    .primary:hover { --corner-frame: url('./control-corners.svg#hover'); }
+    .masthead button { --corner-frame: url('./control-corners.svg#outline'); }
+    .secondary, .score-choice span { --corner-frame: url('./control-corners.svg#choice'); }
+    .score-choice input:checked + span { --corner-frame: url('./control-corners.svg#selected'); }
+    /* Native fills and borders stay visible while the SVG is loading. */
+    :is(.login-card, .login-card input, .primary, .masthead button, .secondary, .score-choice span) {
+      border-image: var(--corner-frame) 17 fill / var(--corner-extent);
+    }
+  }
+}

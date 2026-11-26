@@ -1,8 +1,8 @@
-import { cabinetMarkup, displayText, escape } from './views.js?v=c8ea598cdf1b';
+import { cabinetMarkup, displayText, escape } from './views.js?v=175325efb7c4';
 import {
   approachesIntro, approachRules, conceptHeading, conceptIntro, conceptQuestions, conceptScale, conceptScaleIntro,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalNotes
-} from './criteria.js?v=c8ea598cdf1b';
+} from './criteria.js?v=175325efb7c4';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -23,7 +23,7 @@ function disclosure(title, content, className = '') {
 const paragraphs = lines => lines.map(line => '<p>' + escape(line) + '</p>').join('');
 const conceptGuide = disclosure('Что учитывать при оценке концепции', paragraphs([conceptHeading, conceptIntro]) +
   '<ul class="guide-list">' + conceptQuestions.map(text => '<li>' + escape(text) + '</li>').join('') + '</ul>' +
-  paragraphs([approachesIntro]) + '<a href="' + approachRules + '" target="_blank" rel="noopener noreferrer">Пункт 6.1 правил конкурса</a>');
+  '<p>' + escape(approachesIntro) + '<br><a href="' + approachRules + '" target="_blank" rel="noopener noreferrer">Пункт 6.1 правил конкурса</a></p>');
 const nominationsGuide = disclosure(nominationsTitle,
   nominations.map(item => '<section><h3>' + escape(item.name) + '</h3>' + paragraphs(item.paragraphs) + '</section>').join('') +
   '<section><h4>' + escape(distinctionHeading) + '</h4>' + paragraphs([distinction]) + '</section>', 'nominations');
@@ -210,9 +210,6 @@ export class FinalVoting {
     const validRules = typeof rules === 'string' && /^https:\/\/disk\.360\.yandex\.ru\/d\/[\w-]+$/.test(rules);
     const rulesLink = validRules
       ? '<a class="ballot-rules" href="' + escape(rules) + '" target="_blank" rel="noopener noreferrer">Положение о работе жюри</a>' : '';
-    const source = this.data.criteria_url;
-    const criteriaLink = updated && typeof source === 'string' && /^https:\/\/docs\.google\.com\/document\/d\/[\w-]+(?:\/edit)?$/.test(source)
-      ? '<a class="ballot-rules" href="' + escape(source) + '" target="_blank" rel="noopener noreferrer">Критерии третьего этапа</a>' : '';
     region.innerHTML = cabinetMarkup('<h2>Ваша оценка</h2>' +
       (closed ? '<p class="ballot-note">Голосование закрыто.</p>' : '') +
       (updated ? weightTable(this.data.criteria) : '') +
@@ -227,7 +224,7 @@ export class FinalVoting {
       '<p class="ballot-feedback" role="status" aria-live="polite"></p>' +
       (draft.conflict ? '<button type="button" class="secondary" data-reload>' +
         (draft.rubricChanged ? 'Открыть действующий лист' : 'Загрузить сохранённую версию') + '</button>' : '') + '</form>' +
-      (updated ? nominationsGuide + '<div class="ballot-sources">' + criteriaLink + rulesLink + '</div>' : ''));
+      (updated ? nominationsGuide + rulesLink : ''));
     const form = region.querySelector('form');
     const feedback = form.querySelector('[role="status"]');
     feedback.textContent = displayText(message);

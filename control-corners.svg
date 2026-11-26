@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <defs>
+    <!-- The first two control points at each edge are collinear with that edge. -->
+    <path id="frame" d="M16.5 .5h7c7 0 10 0 13 3s3 6 3 13v7c0 7 0 10-3 13s-6 3-13 3h-7c-7 0-10 0-13-3s-3-6-3-13v-7c0-7 0-10 3-13s6-3 13-3Z"/>
+  </defs>
+  <view id="panel" viewBox="0 0 40 40"/>
+  <view id="field" viewBox="40 0 40 40"/>
+  <view id="primary" viewBox="80 0 40 40"/>
+  <view id="hover" viewBox="120 0 40 40"/>
+  <view id="outline" viewBox="160 0 40 40"/>
+  <view id="choice" viewBox="200 0 40 40"/>
+  <view id="selected" viewBox="240 0 40 40"/>
+  <use href="#frame" fill="#e8ebf3" stroke="#e8ebf3"/>
+  <use href="#frame" x="40" fill="white" stroke="#70798a"/>
+  <use href="#frame" x="80" fill="#161722" stroke="#161722"/>
+  <use href="#frame" x="120" fill="#32374d" stroke="#161722"/>
+  <use href="#frame" x="160" fill="none" stroke="#11121a"/>
+  <use href="#frame" x="200" fill="white" stroke="#747b8d"/>
+  <use href="#frame" x="240" fill="#20263a" stroke="#20263a"/>
+</svg>
