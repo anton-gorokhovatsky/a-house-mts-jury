@@ -1,4 +1,4 @@
-import { escape } from './views.js?v=ebda6465d6e8';
+import { escape } from './views.js?v=2fcb30745fad';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
