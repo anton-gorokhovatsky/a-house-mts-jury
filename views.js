@@ -16,11 +16,11 @@ export function headerContent({ logo = '/logo.svg', method = 'post', action = '/
 }
 
 export function signInContent({ next = '', login = '', message = '', logo = '/logo.svg',
-  method = 'post', action = '/login' } = {}) {
+  method = 'post', action = '/login', ready = true } = {}) {
   const feedback = message ? '<p id="login-error" class="form-error" role="alert">' + escape(message) + '</p>' : '';
   const passwordAttributes = message ? ' autofocus aria-describedby="login-error"' : '';
   return `
-<main>
+<main class="sign-in-page">
   <section class="cover" aria-labelledby="contest">
     <div class="wrap hero">
       <img src="` + logo + `" width="398" alt="МТС и A–House">
@@ -35,9 +35,8 @@ export function signInContent({ next = '', login = '', message = '', logo = '/lo
       <label for="login">Логин</label>
       <input id="login" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="254" value="` + escape(login) + `">
       <label for="password">Пароль</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024"` + passwordAttributes + `>
-      ` + feedback + `
-      <button class="primary">Войти</button>
+      <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024"` + passwordAttributes + `>` + feedback + `
+      <button class="primary"` + (ready ? '' : ' disabled') + `>Войти</button>
     </form>
   </section>
 </main>`;

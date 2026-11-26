@@ -6,11 +6,35 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://qlzszcunhphficvkezsk.supabase.co; form-action 'none'; base-uri 'none'">
-<title>Кабинет жюри · Меняя привычное</title>
-<link rel="stylesheet" href="../cabinet.css?v=dc4f25be7ec5">
-<script type="module" src="../cabinet.js?v=dc4f25be7ec5"></script>
+<title>Вход для жюри · Меняя привычное</title>
+<link rel="stylesheet" href="../cabinet.css?v=d46ab3b95047">
+<link rel="modulepreload" href="../views.js?v=d46ab3b95047">
+<link rel="modulepreload" href="../config.js?v=d46ab3b95047">
+<link rel="modulepreload" href="../voting.js?v=d46ab3b95047">
+<script type="module" src="../cabinet.js?v=d46ab3b95047"></script>
 </head>
 <body>
-<div id="cabinet"><main class="scene"><div class="wrap content"><p role="status">Загрузка кабинета…</p><noscript>Для входа включите JavaScript.</noscript></div></main></div>
+<div id="cabinet">
+<main class="sign-in-page">
+  <section class="cover" aria-labelledby="contest">
+    <div class="wrap hero">
+      <img src="./logo.svg" width="398" alt="МТС и A–House">
+      <h1 id="contest">Меняя<br>привычное</h1>
+      <p>Третий этап конкурса</p>
+    </div>
+  </section>
+  <section class="login-section" aria-labelledby="sign-in">
+    <form class="login-card" method="dialog" action="#">
+      <h2 id="sign-in">Вход для жюри</h2>
+      <input type="hidden" name="next" value="">
+      <label for="login">Логин</label>
+      <input id="login" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="254" value="">
+      <label for="password">Пароль</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024">
+      <button class="primary" disabled>Войти</button>
+    </form>
+  </section>
+</main></div>
+<noscript><p>Для входа включите JavaScript.</p></noscript>
 </body>
 </html>

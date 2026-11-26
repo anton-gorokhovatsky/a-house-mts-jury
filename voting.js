@@ -1,4 +1,4 @@
-import { escape } from './views.js?v=dc4f25be7ec5';
+import { escape } from './views.js?v=d46ab3b95047';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -56,10 +56,68 @@ function field(criterion, answers, standardScale) {
     '<div class="score-choices">' + choices + '</div>' + site + '</fieldset>';
 }
 
+const draftMessage = 'Черновик сохранён в этом браузере. Изменения ещё не отправлены.';
+const tabDraftMessage = 'Черновик сохранён в этой вкладке до её закрытия. Изменения ещё не отправлены.';
+const memoryDraftMessage = 'Браузер не может записать черновик. Оставьте страницу открытой до отправки оценки.';
+const conflictMessage = 'Сохранённая оценка изменилась. Ваш черновик остался в форме. Можно скопировать свой текст перед загрузкой сохранённой версии.';
+const stores = ['sessionStorage', 'localStorage'];
+
+function sameBallot(a, b, criteria) {
+  return b && a.comment === b.comment && criteria.every(({ key }) => a.answers[key] === b.answers[key]);
+}
+
+function readDraft(key, criteria) {
+  for (const store of stores) {
+    try {
+      const raw = window[store].getItem(key);
+      if (!raw) continue;
+      const item = JSON.parse(raw);
+      if (!Number.isSafeInteger(item.revision) || item.revision < 0 ||
+          typeof item.comment !== 'string' || item.comment.length > 5000 ||
+          !item.answers || typeof item.answers !== 'object' || Array.isArray(item.answers)) continue;
+      const valid = Object.entries(item.answers).every(([name, value]) => {
+        const criterion = criteria.find(c => c.key === name);
+        return criterion && ((value === null && criterion.site_only) || (Number.isInteger(value) && value >= 0 && value <= 5));
+      });
+      if (valid) return { answers: item.answers, comment: item.comment, revision: item.revision, raw,
+        message: store === 'localStorage' || readLocalCopy(key) === raw ? draftMessage : tabDraftMessage };
+    } catch { /* The other storage or the server copy may still be available. */ }
+  }
+}
+
+function readLocalCopy(key) {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+
+function rememberDraft(draft) {
+  const { revision, answers, comment } = draft;
+  draft.raw = JSON.stringify({ revision, answers, comment });
+  let message = memoryDraftMessage;
+  for (const store of stores) {
+    try {
+      window[store].setItem(draft.key, draft.raw);
+      message = store === 'localStorage' ? draftMessage : tabDraftMessage;
+    } catch { /* Keep the editable copy in memory when storage is full or blocked. */ }
+  }
+  return message;
+}
+
+function forgetDraft(draft) {
+  if (!draft.raw) return;
+  for (const store of stores) {
+    try {
+      const storage = window[store];
+      if (storage.getItem(draft.key) === draft.raw) storage.removeItem(draft.key);
+    } catch { /* A matching server ballot also supersedes a stale copy on next sign-in. */ }
+  }
+  delete draft.raw;
+}
+
 export class FinalVoting {
-  constructor(call, onSaved) {
+  constructor(call, onSaved, userId) {
     this.call = call;
     this.onSaved = onSaved;
+    this.userId = userId;
     this.data = null;
     this.saved = new Map();
     this.drafts = new Map();
@@ -100,7 +158,19 @@ export class FinalVoting {
     const saved = this.saved.get(id);
     let draft = this.drafts.get(id);
     if (!draft) {
-      draft = { rubric: this.data.rubric, answers: { ...saved?.answers }, comment: saved?.comment ?? '', revision: saved?.revision ?? 0 };
+      const rubric = this.data.rubric;
+      const key = 'jury.draft.v1/' + this.userId + '/' + rubric + '/' + id;
+      draft = { key, rubric, answers: { ...saved?.answers }, comment: saved?.comment ?? '', revision: saved?.revision ?? 0 };
+      const pending = readDraft(key, this.data.criteria);
+      if (pending && sameBallot(pending, saved, this.data.criteria)) {
+        forgetDraft({ key, raw: pending.raw });
+      } else if (pending) {
+        Object.assign(draft, pending);
+        if (draft.revision !== (saved?.revision ?? 0)) {
+          draft.conflict = true;
+          draft.message = conflictMessage;
+        }
+      }
       this.drafts.set(id, draft);
     }
     const closed = !this.data.accepting;
@@ -122,7 +192,7 @@ export class FinalVoting {
       this.data.criteria.map(c => field(c, draft.answers, standardScale)).join('') +
       '<label class="comment-label" for="ballot-comment">Комментарий <small>по желанию</small></label>' +
       '<textarea id="ballot-comment" name="comment" rows="3" maxlength="5000">' + escape(draft.comment) + '</textarea></fieldset>' +
-      (closed ? '' : '<button class="primary save-ballot" type="submit"' + (draft.saving ? ' disabled' : '') + '>' +
+      (closed ? '' : '<button class="primary save-ballot" type="submit"' + (draft.saving || draft.conflict ? ' disabled' : '') + '>' +
         (draft.saving ? 'Сохраняем…' : saved ? 'Сохранить изменения' : 'Сохранить оценку') + '</button>') +
       '<p class="ballot-feedback" role="status" aria-live="polite"></p>' +
       (draft.conflict ? '<button type="button" class="secondary" data-reload>' +
@@ -135,7 +205,17 @@ export class FinalVoting {
       const input = event.target;
       if (input.name === 'comment') draft.comment = input.value;
       else if (input.type === 'radio') draft.answers[input.name] = input.value === 'na' ? null : Number(input.value);
-      if (!draft.conflict) draft.message = feedback.textContent = 'Есть несохранённые изменения.';
+      let message;
+      if (!draft.conflict && sameBallot(draft, saved, this.data.criteria)) {
+        forgetDraft(draft);
+        message = 'Оценка сохранена.';
+      } else if (!saved && !draft.comment && !Object.keys(draft.answers).length) {
+        forgetDraft(draft);
+        message = '';
+      } else {
+        message = rememberDraft(draft);
+      }
+      if (!draft.conflict && feedback.textContent !== message) draft.message = feedback.textContent = message;
     });
     form.addEventListener('submit', event => {
       event.preventDefault();
@@ -145,12 +225,15 @@ export class FinalVoting {
     const reload = form.querySelector('[data-reload]');
     if (reload) reload.onclick = async () => {
       reload.disabled = true;
+      form.querySelector('.ballot-fields').disabled = true;
       try {
         await this.load();
+        forgetDraft(draft);
         this.drafts.delete(id);
         if (region.isConnected) this.mount(id, region);
       } catch {
         feedback.textContent = 'Загрузить сохранённую версию не удалось. Ваш ввод остался в форме.';
+        form.querySelector('.ballot-fields').disabled = closed;
         reload.disabled = false;
       }
     };
@@ -176,15 +259,17 @@ export class FinalVoting {
         draft.message = 'Организатор обновил критерии. Эта оценка не сохранена. Откройте действующий лист, чтобы оценить работу по новым правилам.';
       } else if (response.status === 409) {
         draft.conflict = true;
-        draft.message = 'Оценка была изменена в другой вкладке. Ваш ввод сохранён в этой форме. Загрузите актуальную версию перед редактированием.';
+        draft.message = conflictMessage;
       } else if (response.status === 403 && (await response.json()).message === 'VOTING_CLOSED') {
         this.data.accepting = false;
         draft.message = 'Голосование закрыто. Изменения не сохранены.';
       } else {
         if (!response.ok) throw new Error('Save unavailable');
         const ballot = await response.json();
-        if (ballot?.rubric !== draft.rubric || ballot.work_id !== id || !Number.isInteger(ballot.revision) || ballot.revision < 1) throw new Error('Unconfirmed save');
+        if (ballot?.rubric !== draft.rubric || ballot.work_id !== id || !Number.isInteger(ballot.revision) ||
+            ballot.revision < 1 || !ballot.answers || !sameBallot(draft, ballot, this.data.criteria)) throw new Error('Unconfirmed save');
         this.saved.set(id, ballot);
+        forgetDraft(draft);
         draft.revision = ballot.revision;
         draft.message = 'Оценка сохранена.';
         this.onSaved();

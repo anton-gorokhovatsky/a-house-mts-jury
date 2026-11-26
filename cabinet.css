@@ -17,7 +17,7 @@ p, h1, h2 { margin: 0; }
 .cover { background: var(--sky); }
 .hero { padding-block: clamp(3rem, 8vw, 6rem) clamp(3rem, 7vw, 5rem); text-align: center; }
 .hero img { width: min(68%, 24.875rem); margin-inline: auto; }
-.hero h1 { margin-top: clamp(3.5rem, 12vw, 10rem); font-size: clamp(2.35rem, 10vw, 8.9rem); line-height: .9; letter-spacing: -.055em; text-transform: uppercase; }
+.hero h1 { margin-top: clamp(3.5rem, 12vw, 10rem); font-size: clamp(2.35rem, 10vw, 8.9rem); line-height: .9; letter-spacing: -.055em; text-transform: uppercase; overflow-wrap: anywhere; }
 .hero p { margin-top: 1.5rem; font-size: clamp(1rem, 2.5vw, 2rem); text-transform: uppercase; }
 .login-section { background: linear-gradient(#fff, #d9e1f3); padding: 1rem 1.25rem 4rem; }
 .login-card { background: #e8ebf3; border-radius: .5rem; max-width: 35rem; margin: 0 auto; padding: clamp(1.5rem, 5vw, 4rem); }
@@ -28,6 +28,30 @@ p, h1, h2 { margin: 0; }
 .primary:hover { background: #32374d; }
 .login-card .primary { margin-top: 1.15rem; width: 100%; }
 .form-error { color: #8e1130; margin-top: 1rem; line-height: 1.4; }
+body:has(.sign-in-page) { container-type: inline-size; }
+@container (min-width: 56rem) {
+  .sign-in-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(18rem, 1fr);
+    align-items: center;
+    gap: clamp(2rem, 5vw, 6rem);
+    min-block-size: 100svh;
+    padding-block: clamp(2rem, 8svh, 6rem);
+    padding-inline: max(4vw, calc((100% - 80rem) / 2));
+    background: linear-gradient(180deg, #8894b4 0, #d6dff2 23%, #fff 65%, #e2e8f3 100%);
+  }
+  .sign-in-page .cover, .sign-in-page .login-section { background: transparent; padding: 0; }
+  .sign-in-page .hero { width: 100%; padding: 0; text-align: start; }
+  .sign-in-page .hero img { width: clamp(12rem, 18vw, 17rem); margin: 0; }
+  .sign-in-page .hero h1 {
+    margin-block-start: clamp(2rem, 7svh, 4.75rem);
+    font-size: clamp(2.8rem, 1.3rem + 4.3vw, 6.5rem);
+    line-height: .94;
+  }
+  .sign-in-page .hero p { margin-block-start: 1.25rem; font-size: clamp(1rem, .75rem + .7vw, 1.45rem); }
+  .sign-in-page .login-card { margin-inline-end: 0; padding: clamp(1.5rem, .65rem + 2.2vw, 3.125rem); }
+  .sign-in-page .login-card h2 { font-size: clamp(1.5rem, 1rem + 1.2vw, 2.15rem); }
+}
 .masthead { background: #4a4e6a; color: white; }
 .masthead-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem 1.5rem; padding-block: 1rem; }
 .masthead img { width: min(56%, 20rem); }
