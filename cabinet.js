@@ -1,8 +1,8 @@
-import { backend } from './config.js?v=454ecd2efb3b';
-import { cabinetMarkup, displayText, catalogueContent, headerContent, signInContent, workContent } from './views.js?v=454ecd2efb3b';
-import { FinalVoting } from './voting.js?v=454ecd2efb3b';
-import { FinalGallery } from './gallery.js?v=454ecd2efb3b';
-import { rankingContent } from './ranking.js?v=454ecd2efb3b';
+import { backend } from './config.js?v=1d919db49b0e';
+import { cabinetMarkup, displayText, catalogueContent, headerContent, signInContent, workContent } from './views.js?v=1d919db49b0e';
+import { FinalVoting } from './voting.js?v=1d919db49b0e';
+import { FinalGallery } from './gallery.js?v=1d919db49b0e';
+import { rankingContent } from './ranking.js?v=1d919db49b0e';
 
 const cabinet = document.querySelector('#cabinet');
 const formOptions = { logo: './logo.svg', method: 'dialog', action: '#' };
@@ -250,7 +250,7 @@ function showCatalogue() {
     content = workContent(work, {
       catalogueHref: fromRanking ? '#rating/' + work.id + suffix : '#list/' + work.id,
       returnLabel: fromRanking ? 'К моему рейтингу' : 'К списку работ',
-      galleryContent: '<section class="sheets" aria-labelledby="sheets-heading"></section>',
+      galleryContent: '<section class="sheets" aria-label="Материалы проекта"></section>',
       pdfControl: '<button type="button" class="primary" id="open-pdf">Открыть PDF</button>',
       votingContent: '<section class="ballot" id="voting" aria-label="Оценка работы"></section>'
     });

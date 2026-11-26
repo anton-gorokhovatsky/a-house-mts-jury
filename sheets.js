@@ -50,11 +50,11 @@ export class ProjectSheets {
     return this.doc.numPages;
   }
 
-  async image(number, signal) {
+  async image(number, signal, maxSide = 2000) {
     const page = await Promise.race([this.doc.getPage(number), this.failure]);
     signal.throwIfAborted();
     const size = page.getViewport({ scale: 1 });
-    const viewport = page.getViewport({ scale: 2000 / Math.max(size.width, size.height) });
+    const viewport = page.getViewport({ scale: maxSide / Math.max(size.width, size.height) });
     const canvas = document.createElement('canvas');
     canvas.width = Math.ceil(viewport.width);
     canvas.height = Math.ceil(viewport.height);

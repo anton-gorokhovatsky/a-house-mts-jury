@@ -1,10 +1,130 @@
-import { displayText, escape, heading } from './views.js?v=454ecd2efb3b';
+import { displayText, escape } from './views.js?v=1d919db49b0e';
+import { ProjectSheets } from './sheets.js?v=1d919db49b0e';
 
-import { ProjectSheets } from './sheets.js?v=454ecd2efb3b';
+const retry = '<p class="sheet-status" role="status"></p><button type="button" class="sheet-tool" data-retry-sheet hidden>Повторить загрузку листа</button>';
+const failure = 'Не удалось загрузить лист. Вы можете повторить попытку или открыть PDF проекта.';
 
-const controls = () => '<div class="sheet-controls"><button type="button" class="sheet-arrow" data-step="-1" aria-label="Предыдущий лист"><span aria-hidden="true">←</span></button>' +
-  '<span class="sheet-number" aria-live="polite" aria-atomic="true"></span>' +
-  '<button type="button" class="sheet-arrow" data-step="1" aria-label="Следующий лист"><span aria-hidden="true">→</span></button></div>';
+function status(container, message = '', failed = false) {
+  container.querySelector(':scope > .sheet-status').textContent = displayText(message);
+  container.querySelector(':scope > [data-retry-sheet]').hidden = !failed;
+}
+
+// Keep the second-stage viewer's zoom, drag, pinch and swipe gestures on the enlarged image.
+function bindViewer(dialog, step) {
+  const pan = dialog.querySelector('.sheet-pan');
+  const img = pan.querySelector('img');
+  const output = dialog.querySelector('.zoom-value');
+  const minus = dialog.querySelector('[data-zoom="out"]');
+  const plus = dialog.querySelector('[data-zoom="in"]');
+  const pointers = new Map();
+  let scale = 1, x = 0, y = 0, width = 0, height = 0;
+  let swipe;
+
+  function draw() {
+    const maxX = Math.max(0, (width * scale - pan.clientWidth) / 2);
+    const maxY = Math.max(0, (height * scale - pan.clientHeight) / 2);
+    x = Math.max(-maxX, Math.min(maxX, x));
+    y = Math.max(-maxY, Math.min(maxY, y));
+    img.style.transform = 'translate(' + x + 'px,' + y + 'px) scale(' + scale + ')';
+    output.textContent = Math.round(scale * 100) + ' %';
+    minus.disabled = !width || scale <= 1;
+    plus.disabled = !width || scale >= 6;
+    pan.classList.toggle('magnified', scale > 1);
+  }
+
+  function fit() {
+    const ratio = Math.min(pan.clientWidth / img.naturalWidth, pan.clientHeight / img.naturalHeight, 1);
+    width = img.naturalWidth ? img.naturalWidth * ratio : 0;
+    height = img.naturalHeight ? img.naturalHeight * ratio : 0;
+    img.style.width = width + 'px';
+    img.style.height = height + 'px';
+    draw();
+  }
+
+  function zoom(next, point) {
+    const factor = Math.max(1, Math.min(6, next)) / scale;
+    const rect = pan.getBoundingClientRect();
+    const px = point ? point.x - rect.left - rect.width / 2 : 0;
+    const py = point ? point.y - rect.top - rect.height / 2 : 0;
+    x = px - (px - x) * factor;
+    y = py - (py - y) * factor;
+    scale *= factor;
+    draw();
+  }
+
+  function reset() {
+    pointers.clear();
+    swipe = null;
+    scale = 1;
+    x = y = 0;
+    fit();
+  }
+
+  function gesture() {
+    const [a, b = a] = pointers.values();
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, distance: Math.hypot(a.x - b.x, a.y - b.y) };
+  }
+
+  dialog.addEventListener('click', event => {
+    const button = event.target.closest('button');
+    if (!button || button.disabled) return;
+    if (button.dataset.step) step(Number(button.dataset.step));
+    if (button.dataset.zoom === 'out') zoom(scale / 1.3);
+    if (button.dataset.zoom === 'in') zoom(scale * 1.3);
+    if (button.dataset.zoom === 'reset') reset();
+    if (button.hasAttribute('data-close')) dialog.close();
+  });
+  dialog.addEventListener('keydown', event => {
+    if (event.altKey || event.metaKey || event.ctrlKey) return;
+    const direction = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
+    if (scale === 1 && direction) step(direction);
+    else if (['+', '='].includes(event.key)) zoom(scale * 1.3);
+    else if (event.key === '-') zoom(scale / 1.3);
+    else if (event.key === '0') reset();
+    else if (scale > 1 && event.key.startsWith('Arrow')) {
+      if (direction) x -= direction * 60;
+      else y += event.key === 'ArrowUp' ? 60 : -60;
+      draw();
+    } else return;
+    event.preventDefault();
+  });
+  pan.addEventListener('wheel', event => {
+    event.preventDefault();
+    zoom(scale * Math.exp(-event.deltaY * .002), { x: event.clientX, y: event.clientY });
+  }, { passive: false });
+  pan.addEventListener('dblclick', event => zoom(scale > 1 ? 1 : 2, {x: event.clientX, y: event.clientY}));
+  pan.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || pointers.size >= 2) return;
+    const point = { x: event.clientX, y: event.clientY };
+    swipe = !pointers.size && scale === 1 && event.pointerType === 'touch' ? { ...point, id: event.pointerId } : null;
+    pointers.set(event.pointerId, point);
+    pan.setPointerCapture(event.pointerId);
+  });
+  pan.addEventListener('pointermove', event => {
+    if (!pointers.has(event.pointerId)) return;
+    const start = gesture();
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const end = gesture();
+    if (start.distance) zoom(scale * end.distance / start.distance, start);
+    x += end.x - start.x;
+    y += end.y - start.y;
+    draw();
+  });
+  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+    pan.addEventListener(type, event => {
+      const start = swipe;
+      swipe = null;
+      pointers.delete(event.pointerId);
+      if (type !== 'pointerup' || start?.id !== event.pointerId || scale !== 1) return;
+      const dx = event.clientX - start.x, dy = event.clientY - start.y;
+      if (Math.abs(dx) >= 50 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1);
+    });
+  }
+  img.addEventListener('load', fit);
+  const observer = new ResizeObserver(() => { if (dialog.open) fit(); });
+  observer.observe(pan);
+  return { reset, disconnect: () => observer.disconnect() };
+}
 
 export class FinalGallery {
   constructor(request) {
@@ -12,139 +132,181 @@ export class FinalGallery {
   }
 
   mount(region, work) {
-    const urls = new Map();
-    let index = 1;
-    let total;
-    let reader;
-    let opening;
-    let pending;
-    let opener;
-    let closed = false;
-    const name = escape(work.title);
-    region.innerHTML = heading('Листы проекта', 2, 'sheets-heading') + '<div class="sheet-stage"><button type="button" class="sheet-preview" data-expand ' +
-      'aria-label="Открыть лист крупнее"><img alt=""></button></div><div class="sheet-bar">' + controls() +
-      '<button type="button" class="sheet-tool" data-expand>На весь экран</button></div>' +
-      '<p class="sheet-status" role="status"></p><button type="button" class="sheet-tool" data-retry-sheet hidden>Повторить загрузку листа</button>' +
-      '<dialog class="sheet-dialog" aria-label="Листы проекта ' + name + '"><div class="sheet-dialog-layout">' +
-      '<div class="sheet-dialog-top"><button type="button" class="sheet-tool" data-zoom aria-pressed="false">Увеличить</button>' +
-      '<button type="button" class="sheet-tool" data-close autofocus>Закрыть</button></div>' +
-      '<div class="sheet-pan"><img alt=""></div>' + controls() + '<p class="sheet-status" role="status"></p>' +
-      '<button type="button" class="sheet-tool" data-retry-sheet hidden>Повторить загрузку листа</button></div></dialog>';
+    const title = escape(work.title);
+    region.innerHTML = '<div class="sheet-strip" role="group" aria-label="Листы проекта" aria-describedby="sheet-keys"></div><span id="sheet-keys" class="sr-only">Стрелками влево и вправо можно выбрать лист. Нажмите Enter, чтобы открыть его крупнее.</span>' + retry +
+      '<dialog class="sheet-dialog" aria-label="Листы проекта ' + title + '"><div class="sheet-dialog-layout">' +
+      '<div class="sheet-dialog-top"><div class="sheet-zoom"><button type="button" class="sheet-arrow" data-zoom="out" aria-label="Уменьшить">−</button>' +
+      '<output class="zoom-value" aria-label="Масштаб">100 %</output><button type="button" class="sheet-arrow" data-zoom="in" aria-label="Увеличить">+</button>' +
+      '<button type="button" class="sheet-tool" data-zoom="reset" aria-label="Сбросить" title="Сбросить масштаб"><span class="sheet-label">Сбросить</span><span class="sheet-symbol" aria-hidden="true">↺</span></button></div>' +
+      '<button type="button" class="sheet-tool" data-close autofocus aria-label="Закрыть" title="Закрыть"><span class="sheet-label">Закрыть</span><span class="sheet-symbol" aria-hidden="true">×</span></button></div>' +
+      '<div class="sheet-pan"><img draggable="false" alt=""></div>' + retry +
+      '<div class="sheet-controls"><button type="button" class="sheet-arrow" data-step="-1" aria-label="Предыдущий лист">←</button>' +
+      '<output class="sheet-number" aria-live="polite" aria-atomic="true"></output>' +
+      '<button type="button" class="sheet-arrow" data-step="1" aria-label="Следующий лист">→</button></div></div></dialog>';
+    const strip = region.querySelector('.sheet-strip');
     const dialog = region.querySelector('dialog');
-    const pan = dialog.querySelector('.sheet-pan');
-    const zoom = dialog.querySelector('[data-zoom]');
-    const images = [...region.querySelectorAll('img')];
+    const layout = dialog.querySelector('.sheet-dialog-layout');
+    const image = dialog.querySelector('img');
+    const previews = new Map();
+    let reader, fullRender, fullUrl, opener;
+    let index = 0, total = 0, closed = false;
+    const viewer = bindViewer(dialog, by => select((index + by + total) % total));
 
-    function magnify(on) {
-      pan.classList.toggle('magnified', on);
-      zoom.setAttribute('aria-pressed', String(on));
-      zoom.textContent = on ? 'Уместить' : 'Увеличить';
-      pan.scrollTo(0, 0);
-    }
-
-    function controlsState(message = '', failed = false) {
-      const ready = images[0].hasAttribute('src');
-      for (const n of region.querySelectorAll('.sheet-number')) n.textContent = total ? displayText('Лист ' + index + ' из ' + total) : '';
-      for (const b of region.querySelectorAll('[data-step]')) {
-        const next = index + Number(b.dataset.step);
-        b.setAttribute('aria-disabled', String(!total || next < 1 || next > total));
+    function releasePreview(button) {
+      previews.get(button)?.abort();
+      previews.delete(button);
+      const img = button.querySelector('img');
+      if (img.hasAttribute('src')) {
+        URL.revokeObjectURL(img.src);
+        img.removeAttribute('src');
       }
-      for (const b of region.querySelectorAll('[data-expand]')) b.disabled = !total;
-      zoom.disabled = !ready;
-      for (const n of region.querySelectorAll('.sheet-status')) n.textContent = displayText(message);
-      for (const b of region.querySelectorAll('[data-retry-sheet]')) b.hidden = !failed;
     }
 
-    const select = async number => {
-      if (closed || number < 1 || (total && number > total)) return;
-      index = number;
-      pending?.abort();
-      const current = new AbortController();
-      pending = current;
-      magnify(false);
-      for (const img of images) { img.removeAttribute('src'); img.alt = ''; }
-      controlsState('Загружаем лист…');
+    async function thumbnail(button) {
+      const img = button.querySelector('img');
+      if (closed || previews.has(button) || img.hasAttribute('src') || !reader?.doc) return;
+      const job = new AbortController();
+      previews.set(button, job);
+      const number = Number(button.dataset.page);
       try {
-        reader ??= new ProjectSheets(work, this.request);
-        opening ??= reader.open();
-        total = await opening;
-        if (current.signal.aborted) return;
-        controlsState('Загружаем лист…');
-        let url = urls.get(index);
-        if (!url) {
-          const file = await reader.image(number, current.signal);
-          if (current.signal.aborted) return;
-          url = URL.createObjectURL(file);
-          urls.set(number, url);
-        }
-        for (const img of images) {
-          img.alt = displayText(work.title + ', лист ' + number);
-          img.src = url;
-        }
-        await images[0].decode();
-        if (current.signal.aborted) return;
-        region.querySelector('.sheet-stage').classList.toggle('sheet-portrait', images[0].naturalHeight > images[0].naturalWidth);
-        for (const [n, oldUrl] of urls) if (Math.abs(n - number) > 1) { URL.revokeObjectURL(oldUrl); urls.delete(n); }
-        controlsState();
+        const resolution = Math.min(1500, Math.max(640, Math.ceil(button.clientWidth * devicePixelRatio)));
+        const blob = await reader.image(number, job.signal, resolution);
+        if (job.signal.aborted) return;
+        img.src = URL.createObjectURL(blob);
+        await img.decode();
+        if (!job.signal.aborted && number === 1) strip.classList.toggle('portrait', img.naturalHeight > img.naturalWidth);
       } catch {
-        if (current.signal.aborted) return;
-        reader?.close();
-        reader = null;
-        opening = null;
-        if (urls.has(number)) { URL.revokeObjectURL(urls.get(number)); urls.delete(number); }
-        for (const img of images) { img.removeAttribute('src'); img.alt = ''; }
-        controlsState('Не удалось загрузить лист. Вы можете повторить попытку или открыть PDF проекта.', true);
+        if (!job.signal.aborted) {
+          releasePreview(button);
+          status(region, failure, true);
+        }
+      } finally {
+        if (previews.get(button) === job) previews.delete(button);
+      }
+    }
+
+    const visible = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) thumbnail(entry.target);
+        else releasePreview(entry.target);
+      }
+    }, { root: strip, rootMargin: '0px 18%' });
+
+    function clearFull() {
+      fullRender?.abort();
+      image.removeAttribute('src');
+      if (fullUrl) URL.revokeObjectURL(fullUrl);
+      fullUrl = null;
+    }
+
+    async function select(next) {
+      if (closed || !dialog.open || !total) return;
+      index = next;
+      clearFull();
+      const job = new AbortController();
+      fullRender = job;
+      const number = index + 1;
+      const preview = strip.children[index].querySelector('img').getAttribute('src');
+      if (preview) image.src = preview;
+      image.alt = displayText(work.title + ', лист ' + number);
+      const position = dialog.querySelector('.sheet-number');
+      position.textContent = number + ' / ' + total;
+      position.setAttribute('aria-label', displayText('Лист ' + number + ' из ' + total));
+      viewer.reset();
+      status(layout, preview ? '' : 'Загружаем лист…');
+      try {
+        const blob = await reader.image(number, job.signal);
+        if (job.signal.aborted) return;
+        fullUrl = URL.createObjectURL(blob);
+        image.src = fullUrl;
+        await image.decode();
+        if (!job.signal.aborted) status(layout);
+      } catch {
+        if (!job.signal.aborted) status(layout, failure, true);
+      }
+    }
+
+    const openBook = async () => {
+      fullRender?.abort();
+      visible.disconnect();
+      for (const button of previews.keys()) releasePreview(button);
+      reader?.close();
+      const book = new ProjectSheets(work, this.request);
+      reader = book;
+      status(region, 'Загружаем листы…');
+      if (dialog.open) status(layout, 'Загружаем лист…');
+      try {
+        const count = await book.open();
+        if (closed || reader !== book) return;
+        total = count;
+        if (!strip.children.length) {
+          const buttons = Array.from({ length: total }, (_, i) => '<button type="button" class="sheet-preview" data-page="' + (i + 1) +
+            '" tabindex="' + (i === 0 ? '0' : '-1') + '" aria-label="Открыть лист ' + (i + 1) + ' из ' + total + ' крупнее"><span aria-hidden="true">Лист ' + (i + 1) + '</span><img alt=""></button>');
+          strip.innerHTML = buttons.join('');
+          dialog.querySelector('.sheet-controls').hidden = total < 2;
+          strip.classList.toggle('single', total === 1);
+        }
+        status(region);
+        for (const button of strip.children) visible.observe(button);
+        if (dialog.open) select(index);
+      } catch {
+        if (!closed && reader === book) {
+          status(region, failure, true);
+          if (dialog.open) status(layout, failure, true);
+        }
       }
     };
+
     region.addEventListener('click', event => {
-      const b = event.target.closest('button');
-      if (!b || b.disabled || b.getAttribute('aria-disabled') === 'true') return;
-      if (b.hasAttribute('data-step')) select(index + Number(b.dataset.step));
-      if (b.hasAttribute('data-expand') && !dialog.open) { opener = b; dialog.showModal(); }
-      if (b.hasAttribute('data-close')) dialog.close();
-      if (b.hasAttribute('data-zoom')) magnify(!pan.classList.contains('magnified'));
-      if (b.hasAttribute('data-retry-sheet')) select(index);
+      const button = event.target.closest('button');
+      if (button?.hasAttribute('data-retry-sheet')) openBook();
+      else if (button?.hasAttribute('data-page')) {
+        opener = button;
+        opener.focus({ preventScroll: true });
+        dialog.showModal();
+        select(Number(button.dataset.page) - 1);
+      }
+    });
+    function tabStop(button) {
+      const previous = strip.querySelector('[tabindex="0"]');
+      if (previous && previous !== button) previous.tabIndex = -1;
+      button.tabIndex = 0;
+    }
+    strip.addEventListener('focusin', event => {
+      if (event.target.matches('[data-page]')) tabStop(event.target);
+    });
+    strip.addEventListener('scrollend', () => {
+      if (closed || dialog.open || strip.contains(document.activeElement) || !strip.firstElementChild) return;
+      const left = strip.getBoundingClientRect().left;
+      const nearest = [...strip.children].reduce((a, b) =>
+        Math.abs(a.getBoundingClientRect().left - left) <= Math.abs(b.getBoundingClientRect().left - left) ? a : b);
+      tabStop(nearest);
+    });
+    strip.addEventListener('keydown', event => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      const by = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
+      const current = event.target.closest('[data-page]');
+      if (by && current) {
+        event.preventDefault();
+        strip.children[Number(current.dataset.page) - 1 + by]?.focus();
+      }
     });
     dialog.addEventListener('close', () => {
-      magnify(false);
-      if (!closed && opener?.isConnected) opener.focus({ preventScroll: true });
+      clearFull();
+      viewer.reset();
+      if (!closed && opener?.isConnected && (document.activeElement === document.body || dialog.contains(document.activeElement))) {
+        opener.focus({ preventScroll: true });
+      }
     });
-    region.addEventListener('keydown', event => {
-      if (pan.classList.contains('magnified') || event.altKey || event.metaKey || event.ctrlKey) return;
-      const step = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
-      if (step && total) { event.preventDefault(); select(index + step); }
-    });
-    for (const surface of [region.querySelector('.sheet-stage'), pan]) {
-      let start;
-      let suppressClick = false;
-      surface.addEventListener('touchstart', event => {
-        const t = event.touches[0];
-        start = event.touches.length === 1 && !pan.classList.contains('magnified') ? [t.clientX, t.clientY] : null;
-        suppressClick = false;
-      }, { passive: true });
-      surface.addEventListener('touchcancel', () => { start = null; });
-      surface.addEventListener('touchend', event => {
-        if (!start || event.touches.length) return;
-        const t = event.changedTouches[0];
-        const dx = t.clientX - start[0], dy = t.clientY - start[1];
-        start = null;
-        if (Math.abs(dx) > 40 && Math.abs(dx) > 1.5 * Math.abs(dy)) {
-          suppressClick = true;
-          select(index + (dx < 0 ? 1 : -1));
-        }
-      }, { passive: true });
-      surface.addEventListener('click', event => {
-        if (suppressClick) { event.preventDefault(); event.stopPropagation(); suppressClick = false; }
-      }, true);
-    }
-    select(1);
+    openBook();
     return () => {
       closed = true;
-      pending?.abort();
+      visible.disconnect();
+      viewer.disconnect();
+      clearFull();
+      for (const button of strip.children) releasePreview(button);
       reader?.close();
       if (dialog.open) dialog.close();
-      for (const img of images) img.removeAttribute('src');
-      for (const url of urls.values()) URL.revokeObjectURL(url);
     };
   }
 }
