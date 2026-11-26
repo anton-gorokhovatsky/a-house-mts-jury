@@ -1,5 +1,6 @@
-import { backend } from './config.js';
-import { catalogueContent, headerContent, signInContent, workContent } from './views.js';
+import { backend } from './config.js?v=811b70d00447';
+import { catalogueContent, headerContent, signInContent, workContent } from './views.js?v=811b70d00447';
+import { FinalVoting } from './voting.js?v=811b70d00447';
 
 const cabinet = document.querySelector('#cabinet');
 const formOptions = { logo: './logo.svg', method: 'dialog', action: '#' };
@@ -9,6 +10,7 @@ let session;
 let works = [];
 let pendingPdf;
 let pdfUrl;
+let voting;
 
 function request(route, { method = 'GET', token, body, signal = AbortSignal.timeout(12000) } = {}) {
   const headers = { apikey: backend.publishableKey };
@@ -29,14 +31,21 @@ async function accessToken() {
   if (!session) return null;
   if (session.validUntil > Date.now() + 30000) return session.token;
   const starting = session;
-  const response = await request('/auth/v1/token?grant_type=refresh_token', {
-    method: 'POST', body: { refresh_token: starting.refresh }
-  });
-  if (session !== starting || !response.ok) return null;
-  const refreshed = await response.json();
-  if (session !== starting) return null;
-  setSession(refreshed);
-  return session.token;
+  starting.refreshing ??= (async () => {
+    try {
+      const response = await request('/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST', body: { refresh_token: starting.refresh }
+      });
+      if (session !== starting || !response.ok) return null;
+      const refreshed = await response.json();
+      if (session !== starting) return null;
+      setSession(refreshed);
+      return session.token;
+    } finally {
+      starting.refreshing = null;
+    }
+  })();
+  return starting.refreshing;
 }
 
 function showSignIn({ login = '', message = '' } = {}) {
@@ -76,6 +85,14 @@ async function signIn(event) {
         throw new Error('Incomplete catalogue');
       }
       works = items;
+      voting = new FinalVoting(async (rpc, body) => {
+        const token = await accessToken();
+        if (!token) throw new Error('Session expired');
+        return request('/rest/v1/rpc/' + rpc, { method: 'POST', body, token });
+      }, () => {
+        if (cabinet.querySelector('.works')) showCatalogue();
+      });
+      await voting.load().catch(() => {});
       showCatalogue();
       return;
     }
@@ -104,8 +121,9 @@ function showCatalogue() {
   const work = kind === 'work' ? works.find(item => item.id === id) : null;
   const content = work ? workContent(work, {
     catalogueHref: '#list/' + work.id,
-    pdfControl: '<button type="button" class="primary" id="open-pdf">Открыть PDF</button>'
-  }) : catalogueContent(works, workId => '#work/' + workId);
+    pdfControl: '<button type="button" class="primary" id="open-pdf">Открыть PDF</button>',
+    votingContent: '<section class="ballot" id="voting" aria-label="Оценка работы"></section>'
+  }) : catalogueContent(works, workId => '#work/' + workId, voting?.scored);
   cabinet.innerHTML = headerContent(formOptions) + content;
   document.title = (work?.title ?? 'Работы финалистов') + ' · Меняя привычное';
   cabinet.querySelector('header form').addEventListener('submit', event => {
@@ -115,13 +133,17 @@ function showCatalogue() {
   const focus = (kind === 'list' && document.getElementById(id)) || cabinet.querySelector('main h1');
   if (focus.tagName === 'H1') focus.tabIndex = -1;
   focus.focus();
-  if (work) cabinet.querySelector('#open-pdf').addEventListener('click', event => openPdf(work, event.currentTarget));
+  if (work) {
+    cabinet.querySelector('#open-pdf').addEventListener('click', event => openPdf(work, event.currentTarget));
+    voting?.mount(work.id, cabinet.querySelector('#voting'));
+  }
 }
 
 function leave(feedback) {
   const token = session?.token;
   session = null;
   works = [];
+  voting = null;
   clearPdf();
   if (token) request('/auth/v1/logout?scope=local', { method: 'POST', token }).catch(() => {});
   showSignIn(feedback);

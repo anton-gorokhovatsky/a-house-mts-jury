@@ -42,3 +42,36 @@ p, h1, h2 { margin: 0; }
 .return { display: inline-flex; align-items: center; min-height: 2.75rem; margin-bottom: .9rem; }
 .materials { margin-top: clamp(1.5rem, 4vw, 3rem); display: flex; align-items: center; flex-wrap: wrap; gap: .65rem 1.1rem; }
 .status { margin-top: 1.7rem; margin-bottom: 1rem; line-height: 1.45; }
+.sheet-progress { margin-top: 1rem; }
+.work-link small { display: inline-block; margin-inline-start: .55em; font-size: .84rem; }
+.ballot { margin-top: clamp(2rem, 5vw, 4rem); max-width: 45rem; }
+.ballot, .ballot legend { overflow-wrap: anywhere; }
+.ballot legend { max-width: 100%; }
+.ballot h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.1; }
+.ballot small { font-size: .9rem; font-weight: normal; }
+.ballot .scale { margin: .5rem 0; }
+.scale summary, .ballot-rules { display: list-item; padding-block: .7rem; cursor: pointer; width: fit-content; min-height: 2.75rem; }
+.ballot-rules { display: inline-block; }
+.scale ul { list-style: none; padding: 0; margin: 0 0 .6rem; }
+.scale li, .scale p, .criterion-help { line-height: 1.5; }
+.scale p { margin-bottom: .8rem; }
+.ballot-fields, .criterion { padding: 0; margin: 0; border: 0; min-width: 0; }
+.ballot form { margin-top: 1.35rem; }
+.criterion { margin-bottom: 1.8rem; }
+.criterion legend { padding: 0; font-size: 1.13rem; font-weight: bold; line-height: 1.35; }
+.criterion legend small { display: inline-block; color: #414859; white-space: nowrap; }
+.criterion-help { margin: .35rem 0 0; }
+.score-choices { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .65rem; }
+.score-choice { position: relative; cursor: pointer; }
+.score-choice input, .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.score-choice span { display: grid; place-items: center; min-width: 2.75rem; min-height: 2.75rem; padding: .45rem; color: #161722; background: #fff; border: 1px solid #747b8d; border-radius: .3rem; }
+.score-choice input:checked + span { color: #fff; background: #20263a; border-color: #20263a; font-weight: bold; }
+.score-choice input:focus-visible + span, .ballot summary:focus-visible, .ballot textarea:focus-visible { outline: .18rem solid #315cc0; outline-offset: .15rem; }
+.no-site { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; width: fit-content; line-height: 1.4; }
+.no-site input { margin: 0; }
+.comment-label { display: block; font-weight: bold; margin-bottom: .5rem; }
+.ballot textarea { display: block; width: 100%; max-width: 39rem; min-height: 5rem; padding: .75rem; font: inherit; color: inherit; background: #fff; border: 1px solid #747b8d; border-radius: .35rem; resize: vertical; }
+.save-ballot { margin-top: 1rem; }
+.ballot-note, .ballot-feedback:not(:empty) { margin-top: .8rem; line-height: 1.4; }
+.secondary { margin-top: .5rem; min-height: 2.75rem; padding: .55rem .85rem; color: #161722; background: #fff; border: 1px solid #747b8d; border-radius: .3rem; }
+.ballot button:disabled { cursor: default; }

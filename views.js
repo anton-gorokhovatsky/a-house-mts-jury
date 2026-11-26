@@ -1,4 +1,4 @@
-const escape = value => String(value).replace(/[&<>"']/g, character => ({
+export const escape = value => String(value).replace(/[&<>"']/g, character => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
 }[character]));
 
@@ -43,15 +43,17 @@ export function signInContent({ next = '', login = '', message = '', logo = '/lo
 </main>`;
 }
 
-export function catalogueContent(works, href = id => '/works/' + id) {
+export function catalogueContent(works, href = id => '/works/' + id, scored = null) {
   const links = works.map(work => '<li><a class="work-link" id="' + work.id + '" href="' + href(work.id) + '">' +
-    escape(work.title) + '</a></li>').join('');
-  return '<main class="scene"><div class="wrap content"><p class="stage">Третий этап</p><h1>Работы финалистов</h1><ul class="works">' + links + '</ul></div></main>';
+    escape(work.title) + (scored?.has(work.id) ? ' <small>Оценена</small>' : '') + '</a></li>').join('');
+  const progress = scored ? '<p class="sheet-progress">Оценено ' + scored.size + ' из ' + works.length + '</p>' : '';
+  return '<main class="scene"><div class="wrap content"><p class="stage">Третий этап</p><h1>Работы финалистов</h1>' + progress + '<ul class="works">' + links + '</ul></div></main>';
 }
 
 export function workContent(work, {
   catalogueHref = '/works#' + work.id,
-  pdfControl = '<a class="primary" href="/pdf/' + work.id + '">Открыть PDF</a>'
+  pdfControl = '<a class="primary" href="/pdf/' + work.id + '">Открыть PDF</a>',
+  votingContent = '<p class="status">Оценивание пока недоступно.</p>'
 } = {}) {
   const megabytes = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(work.bytes / 1_000_000);
   return `
@@ -62,7 +64,7 @@ export function workContent(work, {
     ` + pdfControl + `
     <span>` + megabytes + ` МБ</span>
   </div>
-  <p class="status">Оценивание пока недоступно.</p>
+  ` + votingContent + `
 </div></main>`;
 }
 
