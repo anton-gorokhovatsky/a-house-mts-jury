@@ -1,4 +1,18 @@
 @font-face {
+  font-family: 'MTS Extended';
+  src: url('https://static.tildacdn.com/tild3437-3162-4530-b961-616430663737/MTSExtended-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MTS Compact';
+  src: url('https://static.tildacdn.com/tild3732-3834-4863-b263-373538393432/MTSCompact-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
   font-family: 'Roboto Flex Extended';
   src: url('./fonts/roboto-flex-extended-regular.woff2') format('woff2');
   font-weight: 400;
@@ -14,8 +28,8 @@
   font-display: swap;
 }
 :root {
-  --display-face: 'Roboto Flex Extended', Arial, sans-serif;
-  font-family: 'Roboto Flex Compact', Arial, sans-serif;
+  --display-face: 'MTS Extended', 'Roboto Flex Extended', Arial, sans-serif;
+  font-family: 'MTS Compact', 'Roboto Flex Compact', Arial, sans-serif;
   color: #11121a;
   background: #fff;
   --sky: linear-gradient(180deg, #4a4e6a 0, #afbde2 27%, #fff 77%);
@@ -66,7 +80,7 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
     margin-block-start: clamp(2rem, 7svh, 4.75rem);
     /* Align the visible strokes of М and П with the edge of the logo. */
     margin-inline-start: -.09em;
-    line-height: .94;
+    line-height: .904;
   }
   .sign-in-page .hero p { margin-block-start: 1.25rem; font-size: clamp(1rem, .75rem + .7vw, 1.45rem); }
   .sign-in-page .login-card { margin-inline-end: 0; padding: clamp(1.5rem, .65rem + 2.2vw, 3.125rem); }
