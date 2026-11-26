@@ -129,7 +129,8 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
   margin-block-start: .46em;
   transform: rotate(-45deg);
 }
-.scale[open] > summary::before { transform: rotate(45deg); }
+/* The downstroke sits below the rotated square's centre. Keep its ink on the first text line. */
+.scale[open] > summary::before { transform: translateY(-.15em) rotate(45deg); }
 @media (prefers-reduced-motion: no-preference) {
   .scale > summary::before { transition: transform 150ms ease-out; }
   @supports (transition-behavior: allow-discrete) and selector(details::details-content) {
