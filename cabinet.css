@@ -52,11 +52,12 @@ body:has(.sign-in-page) { container-type: inline-size; }
   .sign-in-page .login-card { margin-inline-end: 0; padding: clamp(1.5rem, .65rem + 2.2vw, 3.125rem); }
   .sign-in-page .login-card h2 { font-size: clamp(1.5rem, 1rem + 1.2vw, 2.15rem); }
 }
-.masthead { background: #4a4e6a; color: white; }
 .masthead-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem 1.5rem; padding-block: 1rem; }
 .masthead img { width: min(56%, 20rem); }
-.masthead button { background: transparent; color: white; border: 1px solid currentColor; border-radius: .3rem; padding: .55rem .95rem; min-height: 2.75rem; }
-.scene { min-height: 82vh; background: linear-gradient(#cbd6ef, #fff min(34rem, 70vh)); }
+.masthead button { background: transparent; color: inherit; border: 1px solid currentColor; border-radius: .3rem; padding: .55rem .95rem; min-height: 2.75rem; }
+.scene, body:has(.masthead) { background: linear-gradient(#cbd6ef, #fff min(34rem, 70vh)); }
+.scene { min-height: 82vh; }
+.masthead + .scene { background: transparent; }
 .content { padding-block: clamp(2rem, 5vw, 5rem); }
 .stage { margin-bottom: .7rem; }
 .content h1 { font-size: clamp(1.9rem, 6.7vw, 6rem); line-height: 1; letter-spacing: -.035em; text-transform: uppercase; overflow-wrap: anywhere; }
