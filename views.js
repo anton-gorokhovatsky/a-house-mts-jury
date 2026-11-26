@@ -1,4 +1,4 @@
-import { russianSpacing, typesetText } from './typography.js?v=1d919db49b0e';
+import { russianSpacing, typesetText } from './typography.js?v=ad245327f1c2';
 
 export const displayText = russianSpacing;
 export const cabinetMarkup = html => typesetText(html, { formatFormText: true });

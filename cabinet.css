@@ -134,8 +134,20 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
   text-indent: calc(0em - var(--break-inset));
 }
 .hang-after-break:first-child { --word-bearing: var(--first-bearing); }
-.works { list-style: none; margin: clamp(1.4rem,4.5vw,4rem) 0 0; padding: 0; }
-.work-link { display: block; width: 100%; border-bottom: 1px solid #3e4558; min-height: 2.75rem; padding: .9rem 0; text-decoration: none; font-size: clamp(1.2rem, 1rem + .85vw, 1.75rem); line-height: 1.2; overflow-wrap: anywhere; }
+.works, .ranking {
+  --list-row-height: clamp(3.375rem, 2.95rem + 1.1vw, 4rem);
+  inline-size: 100%;
+  margin: clamp(1.5rem, 3vw, 2.5rem) 0 0;
+}
+.works { list-style: none; padding: 0; }
+.work-link, .ranking td a {
+  display: flex;
+  align-items: center;
+  min-block-size: var(--list-row-height);
+  padding-block: .5rem;
+  overflow-wrap: anywhere;
+}
+.work-link { width: 100%; border-bottom: 1px solid #3e4558; text-decoration: none; font-size: clamp(1.2rem, 1rem + .85vw, 1.75rem); line-height: 1.2; }
 .return { display: inline-flex; align-items: center; min-height: 2.75rem; margin-bottom: .9rem; }
 .materials { margin-top: clamp(1.5rem, 4vw, 3rem); display: flex; align-items: center; flex-wrap: wrap; gap: .65rem 1.1rem; }
 .status { margin-top: 1.7rem; margin-bottom: 1rem; line-height: 1.45; }
@@ -288,17 +300,19 @@ form.login-card { --corner-extent: clamp(1.5rem, 2.35vw, 2rem); }
   .masthead-inner:has(nav) { grid-template-columns: minmax(9rem, 1fr) auto auto; grid-template-areas: "brand menu exit"; gap: 2rem; }
   .masthead-inner:has(nav) img { inline-size: min(100%, 16rem); }
 }
-.jury-welcome, .ranking-description { max-inline-size: 62ch; margin-top: clamp(1rem, 2.4vw, 1.8rem); }
+.jury-welcome, .ranking-description, .ranking-order, .content:has(.ranking-back) h1 + .status { margin-block-start: clamp(1rem, 2.4vw, 1.8rem); }
+.jury-welcome, .ranking-description { max-inline-size: 62ch; }
 .jury-welcome p + p { margin-block-start: .4em; }
 .regulations-link { margin-block-start: .15em; }
-.ranking-order { display: flex; flex-wrap: wrap; align-items: center; gap: .5em .85em; margin-block-start: 1.5rem; }
+.ranking-order { display: flex; flex-wrap: wrap; align-items: center; gap: .5em .85em; }
 .ranking-order select { font: inherit; color: inherit; max-inline-size: 100%; min-block-size: 2.75rem; padding: .35em .5em; }
-.ranking { border-collapse: collapse; inline-size: min(100%, 52rem); margin-block-start: 1.5rem; font-variant-numeric: tabular-nums; }
+.ranking { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
 .ranking th, .ranking td { text-align: start; padding: .55em .7em .55em 0; border-block-end: 1px solid #c1c6d1; }
 .ranking thead { color: #414859; }
 .ranking :is(th, td):first-child { inline-size: 1%; }
 .ranking :is(th, td):last-child { text-align: end; padding-inline-end: 0; }
-.ranking td a { display: flex; align-items: center; min-block-size: 2.75rem; overflow-wrap: anywhere; }
+.ranking td { padding-block: 0; }
+.ranking td a { min-block-size: calc(var(--list-row-height) - 1px); }
 .ranking-back { margin-block-start: 1.5rem; }
 .sheets { margin-block-start: clamp(1.4rem, 3vw, 2.3rem); }
 .sheet-strip {
