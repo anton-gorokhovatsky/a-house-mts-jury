@@ -1,6 +1,6 @@
-import { backend } from './config.js?v=6c315a078763';
-import { cabinetMarkup, displayText, catalogueContent, headerContent, signInContent, workContent } from './views.js?v=6c315a078763';
-import { FinalVoting } from './voting.js?v=6c315a078763';
+import { backend } from './config.js?v=c775bd483730';
+import { cabinetMarkup, displayText, catalogueContent, headerContent, signInContent, workContent } from './views.js?v=c775bd483730';
+import { FinalVoting } from './voting.js?v=c775bd483730';
 
 const cabinet = document.querySelector('#cabinet');
 const formOptions = { logo: './logo.svg', method: 'dialog', action: '#' };

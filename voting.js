@@ -1,8 +1,8 @@
-import { cabinetMarkup, displayText, escape } from './views.js?v=6c315a078763';
+import { cabinetMarkup, displayText, escape } from './views.js?v=c775bd483730';
 import {
   approachesIntro, approachRules, conceptHeading, conceptIntro, conceptQuestions, conceptScale, conceptScaleIntro,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalNotes
-} from './criteria.js?v=6c315a078763';
+} from './criteria.js?v=c775bd483730';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -60,6 +60,82 @@ const feasibilityDetails = [
   prize + ' ' + exhibition, prize + ' ' + exhibition
 ];
 
+// Optional breaks for the approved Russian headings on devices without a Russian dictionary.
+const criterionSyllables = new Map([
+  'потен-циал', 'кон-цеп-ции', 'зало-жен-ных', 'худо-же-ствен-ного', 'эмо-цио-наль-ного',
+  'эффек-та', 'визу-аль-ного', 'вопло-ще-ния', 'выбран-ного', 'Фина-ли-стом',
+  'Реа-ли-зуе-мость', 'эффек-тив-ность', 'кон-струк-тив-ная', 'соот-вет-ствие',
+  'тех-ни-че-ским', 'тре-бо-ва-ни-ям', 'ком-плекс-ный', 'рас-ши-рен-ный'
+].map(word => [word.replaceAll('-', ''), word.replaceAll('-', '\u00ad')]));
+
+class CriterionTitle extends HTMLElement {
+  #copy;
+  #lastMeasure;
+  #ruler = document.createElement('canvas').getContext('2d');
+  #observer = new ResizeObserver(() => this.#fit());
+
+  connectedCallback() {
+    this.#copy ??= this.textContent;
+    this.#observer.observe(this.closest('fieldset'));
+    this.#fit();
+    document.fonts.ready.then(() => this.#fit());
+  }
+
+  disconnectedCallback() {
+    this.#observer.disconnect();
+  }
+
+  #fit() {
+    if (!this.isConnected) return;
+    const width = this.closest('fieldset').clientWidth;
+    const style = getComputedStyle(this);
+    this.#ruler.font = style.fontWeight + ' ' + style.fontSize + ' ' + style.fontFamily;
+    const measure = text => this.#ruler.measureText(text).width;
+    const metrics = [width, this.#ruler.font, measure(this.#copy)].join('/');
+    if (metrics === this.#lastMeasure) return;
+    this.#lastMeasure = metrics;
+
+    const fragment = document.createDocumentFragment();
+    const unbroken = (text, tracking = 0) => {
+      const span = document.createElement('span');
+      span.className = 'whole-word';
+      span.textContent = text;
+      if (tracking) span.style.letterSpacing = -tracking + 'px';
+      return span;
+    };
+    for (const group of this.#copy.split(' ')) {
+      if (fragment.firstChild) fragment.append(' ');
+      if (measure(group) <= width) {
+        fragment.append(unbroken(group));
+        continue;
+      }
+      const words = group.split('\u00a0');
+      const last = words.pop();
+      const prefix = words.join('\u00a0');
+      const word = last.replace(/^[«(]+|[.,:;!?)»]+$/gu, '');
+      if (measure(word) <= width) {
+        // First use a thin glue space. Tighten only the few pixels needed by a short
+        // conjunction or adjoining punctuation, keeping the letters at their chosen size.
+        const tight = prefix ? prefix + '\u202f' + last : last;
+        const tracking = Math.max(0, measure(tight) - width + .5) / tight.length;
+        if (tracking <= parseFloat(style.fontSize) * .055) {
+          fragment.append(unbroken(tight, tracking));
+        } else {
+          if (prefix) fragment.append(prefix + ' ');
+          fragment.append(unbroken(last));
+        }
+      } else {
+        const parts = group.replace(/[А-Яа-яЁё]+/gu, term => criterionSyllables.get(term) ?? term);
+        fragment.append(parts);
+      }
+    }
+    this.replaceChildren(fragment);
+  }
+}
+
+customElements.define('criterion-title', CriterionTitle);
+
+
 function field(criterion, answers, standardScale, updated, regulationsUrl) {
   const key = escape(criterion.key);
   const selected = answers[criterion.key];
@@ -78,7 +154,7 @@ function field(criterion, answers, standardScale, updated, regulationsUrl) {
         '" target="_blank" rel="noopener noreferrer">Положение о работе жюри, п. 7.4</a>' : ''
     })
     : criterion.key === 'concept' ? conceptGuide : '';
-  return '<fieldset class="criterion"><legend>' + escape((updated && criterionTitles[criterion.key]) || criterion.label) +
+  return '<fieldset class="criterion"><legend><criterion-title>' + escape((updated && criterionTitles[criterion.key]) || criterion.label) + '</criterion-title>' +
     ' <small>Вес ' + criterion.weight + ' %</small></legend>' +
     (help ? '<p class="criterion-help">' + escape(help) + '</p>' : '') +
     (updated && criterion.key === 'technical_review' ? paragraphs(technicalNotes) : '') + specialScale +
