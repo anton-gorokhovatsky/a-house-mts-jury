@@ -58,7 +58,8 @@ h1, h2 { font-family: var(--display-face); font-weight: 400; letter-spacing: nor
 .word-group { display: inline-block; max-inline-size: 100%; }
 .login-card h2 { font-size: clamp(1.32rem, 1rem + 1.2vw, 2rem); line-height: 1.12; margin-bottom: clamp(1.35rem, 2.5vw, 1.85rem); text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
 .login-card label { display: block; margin: 1.15rem 0 .5rem; }
-.login-card input { display: block; min-height: 3.15rem; width: 100%; padding: .7rem .85rem; color: #11121a; background: white; border: 1px solid #70798a; }
+.login-card input, .ballot textarea { display: block; width: 100%; color: #11121a; background: #fff; border: 1px solid #70798a; }
+.login-card input { min-height: 3.15rem; padding: .7rem .85rem; }
 /* Offset the visible letters within the original hit area. */
 .primary, .masthead button, .score-choice span {
   --label-shift: .07em;
@@ -184,6 +185,10 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
 .criterion { margin-bottom: 1.8rem; }
 .criterion legend { padding: 0; font-size: clamp(1.125rem, 1rem + .5vw, 1.25rem); line-height: 1.25; }
 .criterion legend small { display: inline-block; color: #414859; white-space: nowrap; }
+@container (max-width: 36rem) {
+  .criterion legend small { display: block; margin-block-start: .3em; }
+  .criterion legend + p { margin-block-start: .6rem; }
+}
 .criterion-help { margin: .35rem 0 0; }
 .score-choices { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .65rem; }
 .score-choice { position: relative; cursor: pointer; }
@@ -194,7 +199,7 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
 .no-site { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; width: fit-content; line-height: 1.4; }
 .no-site input { margin: 0; }
 .comment-label { display: block; margin-bottom: .5rem; }
-.ballot textarea { display: block; width: 100%; max-width: 39rem; min-height: 5rem; padding: .75rem; font: inherit; color: inherit; background: #fff; border: 1px solid #747b8d; border-radius: .35rem; resize: vertical; }
+.ballot textarea { max-width: 39rem; min-height: 5rem; padding: .75rem; font: inherit; resize: vertical; }
 .materials .primary, .save-ballot { --label-shift: 0px; }
 .save-ballot { margin-top: 1rem; }
 .ballot-note, .ballot-feedback:not(:empty) { margin-top: .8rem; line-height: 1.4; }
@@ -214,8 +219,10 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
 .nominations h4 { font-family: inherit; }
 
 /* The curve meets each straight edge with zero curvature. */
-:is(.login-card, .login-card input, .primary, .masthead button, .secondary, .score-choice span) {
+:is(.login-card, .login-card input, .ballot textarea, .primary, .masthead button, .secondary, .score-choice span) {
   --corner-extent: var(--control-corner);
+  /* Native fields remain readable while the optional SVG is loading. */
+  border-image: var(--corner-frame, none) 17 fill / var(--corner-extent);
   border-radius: var(--corner-extent);
   corner-shape: superellipse(1.7);
 }
@@ -227,15 +234,11 @@ form.login-card { --corner-extent: clamp(1.5rem, 2.35vw, 2rem); }
 @supports not (corner-shape: superellipse(1.7)) {
   @media screen and (forced-colors: none) {
     .login-card { --corner-frame: url('./control-corners.svg#panel'); }
-    .login-card input { --corner-frame: url('./control-corners.svg#field'); }
+    .login-card input, .ballot textarea { --corner-frame: url('./control-corners.svg#field'); }
     .primary { --corner-frame: url('./control-corners.svg#primary'); }
     .primary:hover { --corner-frame: url('./control-corners.svg#hover'); }
     .masthead button { --corner-frame: url('./control-corners.svg#outline'); }
     .secondary, .score-choice span { --corner-frame: url('./control-corners.svg#choice'); }
     .score-choice input:checked + span { --corner-frame: url('./control-corners.svg#selected'); }
-    /* Native fills and borders stay visible while the SVG is loading. */
-    :is(.login-card, .login-card input, .primary, .masthead button, .secondary, .score-choice span) {
-      border-image: var(--corner-frame) 17 fill / var(--corner-extent);
-    }
   }
 }
