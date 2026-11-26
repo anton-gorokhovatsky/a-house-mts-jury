@@ -1,35 +1,54 @@
+@font-face {
+  font-family: 'Roboto Flex Extended';
+  src: url('./fonts/roboto-flex-extended-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 112%;
+}
+@font-face {
+  font-family: 'Roboto Flex Compact';
+  src: url('./fonts/roboto-flex-compact-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 :root {
-  font-family: Arial, sans-serif;
+  --display-face: 'Roboto Flex Extended', Arial, sans-serif;
+  font-family: 'Roboto Flex Compact', Arial, sans-serif;
   color: #11121a;
   background: #fff;
   --sky: linear-gradient(180deg, #4a4e6a 0, #afbde2 27%, #fff 77%);
   --width: 78rem;
 }
 * { box-sizing: border-box; }
-body { margin: 0; }
+body { margin: 0; font-size: clamp(1rem, .93rem + .33vw, 1.125rem); line-height: 1.45; }
 img { display: block; max-width: 100%; height: auto; }
 a { color: inherit; text-underline-offset: .25em; }
-button, input { font: inherit; }
+button, input, textarea { font: inherit; }
 a:focus-visible, button:focus-visible, input:focus-visible { outline: .18rem solid #315cc0; outline-offset: .25rem; }
 button { cursor: pointer; }
 p, h1, h2 { margin: 0; }
+h1, h2 { font-family: var(--display-face); font-weight: 400; letter-spacing: normal; }
 .wrap { width: min(100%, var(--width)); padding-inline: clamp(1.25rem, 4.5vw, 4rem); margin-inline: auto; }
+.sign-in-page { display: flex; flex-direction: column; min-block-size: 100svh; }
 .cover { background: var(--sky); }
-.hero { padding-block: clamp(3rem, 8vw, 6rem) clamp(3rem, 7vw, 5rem); text-align: center; }
+.hero { container-type: inline-size; padding-inline: clamp(20px, 4.5vw, 4rem); padding-block: clamp(2rem, 7vw, 5rem) clamp(2rem, 6vw, 4rem); text-align: center; }
 .hero img { width: min(68%, 24.875rem); margin-inline: auto; }
-.hero h1 { margin-top: clamp(3.5rem, 12vw, 10rem); font-size: clamp(2.35rem, 10vw, 8.9rem); line-height: .9; letter-spacing: -.055em; text-transform: uppercase; overflow-wrap: anywhere; }
-.hero p { margin-top: 1.5rem; font-size: clamp(1rem, 2.5vw, 2rem); text-transform: uppercase; }
-.login-section { background: linear-gradient(#fff, #d9e1f3); padding: 1rem 1.25rem 4rem; }
-.login-card { background: #e8ebf3; border-radius: .5rem; max-width: 35rem; margin: 0 auto; padding: clamp(1.5rem, 5vw, 4rem); }
-.login-card h2 { font-size: clamp(1.45rem, 4.3vw, 2.4rem); margin-bottom: 1.8rem; text-transform: uppercase; }
+/* The longer word sets the maximum size within the available column. */
+.hero h1 { margin-top: clamp(2.5rem, 10vw, 5rem); font-size: min(.15rem + 11cqi, 11.9cqi, 7rem); line-height: 1; text-transform: uppercase; overflow-wrap: anywhere; }
+.hero p { margin-top: clamp(1rem, 3vw, 1.5rem); font-size: clamp(1rem, .85rem + .7vw, 1.5rem); line-height: 1.2; letter-spacing: .025em; text-transform: uppercase; }
+.login-section { flex: 1; background: linear-gradient(#fff, #d9e1f3); padding: 1rem clamp(20px, 4.5vw, 4rem) 3rem; }
+.login-card { background: #e8ebf3; border-radius: .5rem; max-width: 35rem; margin: 0 auto; padding: clamp(1.5rem, 5vw, 4rem) clamp(24px, 5vw, 4rem); }
+.login-card h2 { font-size: clamp(1.32rem, 1rem + 1.2vw, 2rem); line-height: 1.12; margin-bottom: clamp(1.35rem, 2.5vw, 1.85rem); text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
 .login-card label { display: block; margin: 1.15rem 0 .5rem; }
 .login-card input { display: block; min-height: 3.15rem; width: 100%; padding: .7rem .85rem; color: #11121a; background: white; border: 1px solid #70798a; border-radius: .35rem; }
 .primary { display: inline-flex; align-items: center; justify-content: center; padding: .85rem 1.3rem; min-height: 3rem; color: #fff; background: #161722; text-align: center; text-decoration: none; border-radius: .35rem; border: 1px solid #161722; }
 .primary:hover { background: #32374d; }
 .login-card .primary { margin-top: 1.15rem; width: 100%; }
 .form-error { color: #8e1130; margin-top: 1rem; line-height: 1.4; }
-body:has(.sign-in-page) { container-type: inline-size; }
-@container (min-width: 56rem) {
+body:has(.sign-in-page) { container: jury-login / inline-size; }
+@container jury-login (min-width: 56rem) {
   .sign-in-page {
     display: grid;
     grid-template-columns: minmax(0, 1.45fr) minmax(18rem, 1fr);
@@ -45,12 +64,12 @@ body:has(.sign-in-page) { container-type: inline-size; }
   .sign-in-page .hero img { width: clamp(12rem, 18vw, 17rem); margin: 0; }
   .sign-in-page .hero h1 {
     margin-block-start: clamp(2rem, 7svh, 4.75rem);
-    font-size: clamp(2.8rem, 1.3rem + 4.3vw, 6.5rem);
+    /* Align the visible strokes of М and П with the edge of the logo. */
+    margin-inline-start: -.09em;
     line-height: .94;
   }
   .sign-in-page .hero p { margin-block-start: 1.25rem; font-size: clamp(1rem, .75rem + .7vw, 1.45rem); }
   .sign-in-page .login-card { margin-inline-end: 0; padding: clamp(1.5rem, .65rem + 2.2vw, 3.125rem); }
-  .sign-in-page .login-card h2 { font-size: clamp(1.5rem, 1rem + 1.2vw, 2.15rem); }
 }
 .masthead-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem 1.5rem; padding-block: 1rem; }
 .masthead img { width: min(56%, 20rem); }
@@ -58,11 +77,11 @@ body:has(.sign-in-page) { container-type: inline-size; }
 .scene, body:has(.masthead) { background: linear-gradient(#cbd6ef, #fff min(34rem, 70vh)); }
 .scene { min-height: 82vh; }
 .masthead + .scene { background: transparent; }
-.content { padding-block: clamp(2rem, 5vw, 5rem); }
+.content { container-type: inline-size; padding-block: clamp(2rem, 5vw, 5rem); }
 .stage { margin-bottom: .7rem; }
-.content h1 { font-size: clamp(1.9rem, 6.7vw, 6rem); line-height: 1; letter-spacing: -.035em; text-transform: uppercase; overflow-wrap: anywhere; }
+.content h1 { font-size: clamp(1.75rem, 6.3cqi, 4.6rem); line-height: 1.04; text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
 .works { list-style: none; margin: clamp(1.4rem,4.5vw,4rem) 0 0; padding: 0; }
-.work-link { display: block; width: 100%; border-bottom: 1px solid #3e4558; min-height: 2.75rem; padding: .9rem 0; text-decoration: none; font-size: clamp(1.1rem, 3vw, 1.7rem); overflow-wrap: anywhere; }
+.work-link { display: block; width: 100%; border-bottom: 1px solid #3e4558; min-height: 2.75rem; padding: .9rem 0; text-decoration: none; font-size: clamp(1.2rem, 1rem + .85vw, 1.75rem); line-height: 1.2; overflow-wrap: anywhere; }
 .work-link:hover { text-decoration: underline; }
 .return { display: inline-flex; align-items: center; min-height: 2.75rem; margin-bottom: .9rem; }
 .materials { margin-top: clamp(1.5rem, 4vw, 3rem); display: flex; align-items: center; flex-wrap: wrap; gap: .65rem 1.1rem; }
@@ -72,13 +91,14 @@ body:has(.sign-in-page) { container-type: inline-size; }
 .ballot { margin-top: clamp(2rem, 5vw, 4rem); max-width: 45rem; }
 .ballot, .ballot legend { overflow-wrap: anywhere; }
 .ballot legend { max-width: 100%; }
-.ballot h2 { font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.1; }
+.ballot h2 { font-size: clamp(1.5rem, 1.12rem + 1.6vw, 2.4rem); line-height: 1.12; }
 .ballot small { font-size: .9rem; font-weight: normal; }
 .ballot .scale { margin: .5rem 0; }
 .scale summary, .ballot-rules { display: list-item; padding-block: .7rem; cursor: pointer; width: fit-content; min-height: 2.75rem; }
 .ballot-rules { display: inline-block; }
 .scale ul { list-style: none; padding: 0; margin: 0 0 .6rem; }
 .scale li, .scale p, .criterion-help { line-height: 1.5; }
+.criterion-help, .ballot-note { max-inline-size: 68ch; }
 .scale p { margin-bottom: .8rem; }
 .ballot-fields, .criterion { padding: 0; margin: 0; border: 0; min-width: 0; }
 .ballot form { margin-top: 1.35rem; }
