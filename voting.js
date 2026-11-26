@@ -1,42 +1,66 @@
-import { escape } from './views.js?v=2fcb30745fad';
+import { cabinetMarkup, displayText, escape } from './views.js?v=63f24b861472';
+import {
+  approachesIntro, approachRules, conceptHeading, conceptIntro, conceptQuestions, conceptScale, conceptScaleIntro,
+  criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalNotes
+} from './criteria.js?v=63f24b861472';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
   'Соответствует в меньшей степени', 'Соответствует не полностью', 'Соответствует в большой степени', 'Полностью соответствует'
 ];
 const finalRubric = 'final_50_50';
-const conceptScale = ['Отсутствует', 'Плохо / не соответствует', 'Неудовлетворительно / соответствует в меньшей степени',
-  'Удовлетворительно / соответствует не полностью', 'Хорошо / соответствует в большой степени', 'Отлично / полностью соответствует'];
-const feasibilityScale = ['Невозможно оценить', 'Не реализуемо', 'Скорее не реализуемо', 'Частично реализуемо', 'Скорее реализуемо', 'Реализуемо'];
+const feasibilityScale = ['Невозможно оценить', 'Не реализуемо', 'Скорее не реализуемо / нет уверенности в реализации', 'Частично реализуемо', 'Скорее реализуемо', 'Реализуемо'];
 const descriptions = {
   brief: 'Глубина проработки идеи и сила заложенных смыслов.',
   art: 'Оцените визуальное воплощение идеи с учётом выбранного подхода: интеграция в среду или выраженный акцент.',
-  economics: 'CAPEX — затраты на строительство, OPEX — расходы на эксплуатацию.',
-  concept: 'Оцените силу и потенциал идеи, заложенные смыслы и их визуальное воплощение с учётом выбранного подхода к интеграции объекта в пространство.',
-  technical_review: 'Поставьте один балл за техническое решение в целом. Этот критерий заполняет представитель технического блока МТС.'
+  economics: 'CAPEX — затраты на строительство, OPEX — расходы на эксплуатацию.'
 };
-const conceptGuide = '<details class="scale"><summary>Что учитывать при оценке концепции</summary><ul class="guide-list">' +
-  '<li>Чем авторы обосновали выбор концепции и что в ней нового?</li>' +
-  '<li>Вызывает ли идея интерес и может ли стать предметом архитектурной или культурной дискуссии?</li>' +
-  '<li>Насколько выразителен образ и какие эмоции он вызывает?</li>' +
-  '<li>Передаёт ли визуальное решение заложенные смыслы? В чём его оригинальность?</li>' +
-  '<li>Воспринимается ли объект как понятный, безопасный и дружелюбный? Ассоциируется ли он с комфортом?</li></ul></details>';
-const nominations = [
-  ['Лучшее контекстуальное решение', 'Как вышка становится естественной частью конкретного городского или природного ландшафта?'],
-  ['Лучшее архитектурное высказывание', 'Оригинальный, запоминающийся образ переосмысляет облик телекоммуникационной инфраструктуры и может стать ориентиром или символом места.'],
-  ['Лучшее масштабируемое решение', 'Оцените потенциал тиражирования, адаптацию к разным локациям и рациональное использование ресурсов при монтаже и эксплуатации.'],
-  ['Лучший архитектурный эксперимент / виртуальное решение', 'Смелая концепция предлагает новую функцию, типологию, материал или пространственное решение. Для этой номинации реализуемость необязательна.']
-];
-const nominationsGuide = '<details class="scale nominations"><summary>Четыре номинации конкурса</summary><dl>' +
-  nominations.map(([name, description]) => '<dt>' + escape(name) + '</dt><dd>' + escape(description) + '</dd>').join('') + '</dl></details>';
 
-function scaleDetails(title, scale, note = '') {
-  return '<details class="scale"><summary>' + title + '</summary><ul>' +
-    scale.map((meaning, i) => '<li><b>' + i + '</b> — ' + meaning + '</li>').join('') +
-    '</ul>' + (note ? '<p>' + note + '</p>' : '') + '</details>';
+function disclosure(title, content, className = '') {
+  return '<details class="scale ' + className + '"><summary>' + escape(title) + '</summary><div class="scale-body">' + content + '</div></details>';
 }
 
-function field(criterion, answers, standardScale) {
+const paragraphs = lines => lines.map(line => '<p>' + escape(line) + '</p>').join('');
+const conceptGuide = disclosure('Что учитывать при оценке концепции', paragraphs([conceptHeading, conceptIntro]) +
+  '<ul class="guide-list">' + conceptQuestions.map(text => '<li>' + escape(text) + '</li>').join('') + '</ul>' +
+  paragraphs([approachesIntro]) + '<a href="' + approachRules + '" target="_blank" rel="noopener noreferrer">Пункт 6.1 правил конкурса</a>');
+const nominationsGuide = disclosure(nominationsTitle,
+  nominations.map(item => '<section><h3>' + escape(item.name) + '</h3>' + paragraphs(item.paragraphs) + '</section>').join('') +
+  '<section><h4>' + escape(distinctionHeading) + '</h4>' + paragraphs([distinction]) + '</section>', 'nominations');
+
+function weightTable(criteria) {
+  const rows = Object.entries(criterionTitles).map(([key, title], i) => {
+    // A juror only receives their own fields. Both published weights are in the source table.
+    const weight = criteria.find(item => item.key === key)?.weight ?? 50;
+    return '<tr><th scope="row">' + (i + 1) + '</th><td>' + escape(title) +
+      (key === 'technical_review' ? paragraphs(technicalNotes) : '') + '</td><td>' + weight + '</td></tr>';
+  });
+  return disclosure('Критерии оценки', '<table class="rubric-weights"><thead><tr><th>№</th><th>Критерий оценки</th><th>Вес (%)</th></tr></thead>' +
+    '<tbody>' + rows.join('') + '</tbody><tfoot><tr><td></td><th scope="row">ИТОГО</th><td>100</td></tr></tfoot></table>');
+}
+
+function scaleDetails(title, scale, { intro = '', descending = false, notes, source = '' } = {}) {
+  const rows = scale.map((meaning, i) =>
+    '<li><span class="scale-number">' + i + '</span> <span aria-hidden="true">–</span> <span>' + escape(meaning) + (notes ? '<span class="scale-explanation">' + escape(notes[i]) + '</span>' : '') + '</span></li>');
+  if (descending) rows.reverse();
+  return disclosure(title, (intro ? paragraphs([intro]) : '') + '<ul class="scale-values">' + rows.join('') + '</ul>' +
+    source);
+}
+
+const feasibilityNote = 'Критерий «реализуемость и конструктивная логика» является первичным. Невозможность реализации Конкурсной Работы является блокирующим фактором для признания ее автора Победителем Конкурса независимо от оценок по иным критериям. Критерий оценивает член Жюри – представитель технического блока Партнера Конкурса по следующей шкале. Работа, средняя оценка которой по данному критерию (пункт 7.6 настоящего Положения) составляет менее 4 (четырех) баллов, не может занять призовое место и быть рекомендована к реализации; работа со средней оценкой менее 2 (двух) баллов также не рекомендуется к участию в выставке:';
+
+// Section 7.4 of the jury regulations gives the consequences for each feasibility score.
+const noPrize = 'не дает возможности стать Победителем Конкурса и претендовать на реализацию,';
+const prize = 'дает возможность стать Победителем Конкурса и претендовать на реализацию,';
+const noExhibition = 'не дает возможности участвовать в выставке при соответствующем решении Партнера и Организатора.';
+const exhibition = 'дает возможность участвовать в выставке при соответствующем решении Партнера и Организатора.';
+const feasibilityDetails = [
+  noPrize + ' ' + noExhibition, noPrize + ' ' + noExhibition,
+  noPrize + ' ' + exhibition, noPrize + ' ' + exhibition,
+  prize + ' ' + exhibition, prize + ' ' + exhibition
+];
+
+function field(criterion, answers, standardScale, updated, regulationsUrl) {
   const key = escape(criterion.key);
   const selected = answers[criterion.key];
   const feasibility = criterion.key === 'feasibility' || criterion.key === 'technical_review';
@@ -48,11 +72,16 @@ function field(criterion, answers, standardScale) {
     '" value="na"' + (selected === null ? ' checked' : '') + '> Место размещения не определено</label>' : '';
   const help = descriptions[criterion.key];
   const specialScale = feasibility
-    ? scaleDetails('Шкала реализуемости', feasibilityScale, 'По пункту 7.4 положения балл ниже 4 исключает призовое место и рекомендацию к реализации. При среднем балле ниже 2 работа также не рекомендуется к выставке.')
+    ? scaleDetails('Шкала реализуемости', feasibilityScale, {
+      intro: feasibilityNote, notes: feasibilityDetails,
+      source: regulationsUrl ? '<a href="' + escape(regulationsUrl) +
+        '" target="_blank" rel="noopener noreferrer">Положение о работе жюри, п. 7.4</a>' : ''
+    })
     : criterion.key === 'concept' ? conceptGuide : '';
-  return '<fieldset class="criterion"><legend>' + escape(criterion.label) +
+  return '<fieldset class="criterion"><legend>' + escape((updated && criterionTitles[criterion.key]) || criterion.label) +
     ' <small>Вес ' + criterion.weight + ' %</small></legend>' +
-    (help ? '<p class="criterion-help">' + escape(help) + '</p>' : '') + specialScale +
+    (help ? '<p class="criterion-help">' + escape(help) + '</p>' : '') +
+    (updated && criterion.key === 'technical_review' ? paragraphs(technicalNotes) : '') + specialScale +
     '<div class="score-choices">' + choices + '</div>' + site + '</fieldset>';
 }
 
@@ -143,7 +172,7 @@ export class FinalVoting {
   mount(id, region) {
     this.current = { id, region };
     if (!this.data) {
-      region.innerHTML = '<p role="status">Не удалось загрузить оценочный лист.</p><button type="button" class="secondary">Повторить загрузку</button>';
+      region.innerHTML = cabinetMarkup('<p role="status">Не удалось загрузить оценочный лист.</p><button type="button" class="secondary">Повторить загрузку</button>');
       region.querySelector('button').onclick = async event => {
         event.currentTarget.disabled = true;
         try { await this.load(); } catch { /* A fresh retry remains available. */ }
@@ -152,7 +181,7 @@ export class FinalVoting {
       return;
     }
     if (this.data.role === 'observer') {
-      region.innerHTML = '<p class="status">Этот аккаунт даёт доступ к просмотру работ.</p>';
+      region.innerHTML = cabinetMarkup('<p class="status">Этот аккаунт даёт доступ к просмотру работ.</p>');
       return;
     }
     const saved = this.saved.get(id);
@@ -178,29 +207,30 @@ export class FinalVoting {
     const standardScale = updated ? conceptScale : generalScale;
     const message = draft.message ?? (saved ? 'Оценка сохранена.' : '');
     const rules = this.data.regulations_url;
-    const rulesLink = typeof rules === 'string' && /^https:\/\/disk\.360\.yandex\.ru\/d\/[\w-]+$/.test(rules)
+    const validRules = typeof rules === 'string' && /^https:\/\/disk\.360\.yandex\.ru\/d\/[\w-]+$/.test(rules);
+    const rulesLink = validRules
       ? '<a class="ballot-rules" href="' + escape(rules) + '" target="_blank" rel="noopener noreferrer">Положение о работе жюри</a>' : '';
     const source = this.data.criteria_url;
     const criteriaLink = updated && typeof source === 'string' && /^https:\/\/docs\.google\.com\/document\/d\/[\w-]+(?:\/edit)?$/.test(source)
       ? '<a class="ballot-rules" href="' + escape(source) + '" target="_blank" rel="noopener noreferrer">Критерии третьего этапа</a>' : '';
-    region.innerHTML = '<h2>Ваша оценка</h2>' +
+    region.innerHTML = cabinetMarkup('<h2>Ваша оценка</h2>' +
       (closed ? '<p class="ballot-note">Голосование закрыто.</p>' : '') +
-      (updated ? '<p class="ballot-note">Половину итогового балла даёт средняя оценка концепции членами жюри, вторую половину — техническая оценка МТС.</p>' : '') +
-      scaleDetails(updated ? 'Шкала оценки концепции' : 'Как выставлять баллы', standardScale) +
+      (updated ? weightTable(this.data.criteria) : '') +
+      scaleDetails(updated ? 'Шкала оценки концепции' : 'Как выставлять баллы', standardScale, { intro: updated ? conceptScaleIntro : '', descending: updated }) +
       (updated ? '' : rulesLink) +
       '<form><fieldset class="ballot-fields"' + (closed || draft.saving ? ' disabled' : '') + '><legend class="sr-only">Оценочный лист</legend>' +
-      this.data.criteria.map(c => field(c, draft.answers, standardScale)).join('') +
+      this.data.criteria.map(c => field(c, draft.answers, standardScale, updated, validRules ? rules : null)).join('') +
       '<label class="comment-label" for="ballot-comment">Комментарий <small>по желанию</small></label>' +
-      '<textarea id="ballot-comment" name="comment" rows="3" maxlength="5000">' + escape(draft.comment) + '</textarea></fieldset>' +
+      '<textarea id="ballot-comment" name="comment" rows="3" maxlength="5000">\n' + escape(draft.comment) + '</textarea></fieldset>' +
       (closed ? '' : '<button class="primary save-ballot" type="submit"' + (draft.saving || draft.conflict ? ' disabled' : '') + '>' +
         (draft.saving ? 'Сохраняем…' : saved ? 'Сохранить изменения' : 'Сохранить оценку') + '</button>') +
       '<p class="ballot-feedback" role="status" aria-live="polite"></p>' +
       (draft.conflict ? '<button type="button" class="secondary" data-reload>' +
         (draft.rubricChanged ? 'Открыть действующий лист' : 'Загрузить сохранённую версию') + '</button>' : '') + '</form>' +
-      (updated ? nominationsGuide + '<div class="ballot-sources">' + criteriaLink + rulesLink + '</div>' : '');
+      (updated ? nominationsGuide + '<div class="ballot-sources">' + criteriaLink + rulesLink + '</div>' : ''));
     const form = region.querySelector('form');
     const feedback = form.querySelector('[role="status"]');
-    feedback.textContent = message;
+    feedback.textContent = displayText(message);
     form.addEventListener('input', event => {
       const input = event.target;
       if (input.name === 'comment') draft.comment = input.value;
@@ -215,7 +245,10 @@ export class FinalVoting {
       } else {
         message = rememberDraft(draft);
       }
-      if (!draft.conflict && feedback.textContent !== message) draft.message = feedback.textContent = message;
+      if (!draft.conflict && draft.message !== message) {
+        draft.message = message;
+        feedback.textContent = displayText(message);
+      }
     });
     form.addEventListener('submit', event => {
       event.preventDefault();
@@ -232,7 +265,7 @@ export class FinalVoting {
         this.drafts.delete(id);
         if (region.isConnected) this.mount(id, region);
       } catch {
-        feedback.textContent = 'Загрузить сохранённую версию не удалось. Ваш ввод остался в форме.';
+        feedback.textContent = displayText('Загрузить сохранённую версию не удалось. Ваш ввод остался в форме.');
         form.querySelector('.ballot-fields').disabled = closed;
         reload.disabled = false;
       }

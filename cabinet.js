@@ -1,6 +1,6 @@
-import { backend } from './config.js?v=2fcb30745fad';
-import { catalogueContent, headerContent, signInContent, workContent } from './views.js?v=2fcb30745fad';
-import { FinalVoting } from './voting.js?v=2fcb30745fad';
+import { backend } from './config.js?v=63f24b861472';
+import { cabinetMarkup, displayText, catalogueContent, headerContent, signInContent, workContent } from './views.js?v=63f24b861472';
+import { FinalVoting } from './voting.js?v=63f24b861472';
 
 const cabinet = document.querySelector('#cabinet');
 const formOptions = { logo: './logo.svg', method: 'dialog', action: '#' };
@@ -12,6 +12,20 @@ let pendingPdf;
 let cachedPdf;
 let voting;
 const loginKey = 'jury.login.v1';
+const sessionKey = 'jury.session.v1/' + backend.origin;
+const validUserId = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
+let sessionEpoch = 0;
+
+class AccessEnded extends Error {}
+
+function readSession() {
+  try {
+    const item = JSON.parse(sessionStorage.getItem(sessionKey));
+    if (typeof item?.token === 'string' && item.token && typeof item.refresh === 'string' && item.refresh &&
+        Number.isFinite(item.validUntil) && validUserId.test(item.userId)) return item;
+  } catch { /* Storage may be unavailable in this browser. */ }
+  return null;
+}
 
 function request(route, { method = 'GET', token, body, signal = AbortSignal.timeout(12000) } = {}) {
   const headers = { apikey: backend.publishableKey };
@@ -24,21 +38,24 @@ function request(route, { method = 'GET', token, body, signal = AbortSignal.time
 }
 
 function setSession({ access_token, refresh_token, expires_in, user }) {
-  if (!access_token || !refresh_token || !Number.isFinite(expires_in) ||
-      !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(user?.id)) throw new Error('Invalid session');
+  if (typeof access_token !== 'string' || !access_token || typeof refresh_token !== 'string' || !refresh_token ||
+      !Number.isFinite(expires_in) || expires_in <= 0 || !validUserId.test(user?.id)) throw new Error('Invalid session');
   session = { token: access_token, refresh: refresh_token, userId: user.id, validUntil: Date.now() + expires_in * 1000 };
+  try { sessionStorage.setItem(sessionKey, JSON.stringify(session)); } catch { /* In-memory sign-in still works. */ }
 }
 
-async function accessToken() {
+async function accessToken(force = false) {
   if (!session) return null;
-  if (session.validUntil > Date.now() + 30000) return session.token;
+  if (!force && session.validUntil > Date.now() + 30000) return session.token;
   const starting = session;
   starting.refreshing ??= (async () => {
     try {
       const response = await request('/auth/v1/token?grant_type=refresh_token', {
         method: 'POST', body: { refresh_token: starting.refresh }
       });
-      if (session !== starting || !response.ok) return null;
+      if (session !== starting) return null;
+      if ([400, 401, 403].includes(response.status)) throw new AccessEnded();
+      if (!response.ok) throw new Error('Session refresh unavailable');
       const refreshed = await response.json();
       if (session !== starting) return null;
       setSession(refreshed);
@@ -48,6 +65,25 @@ async function accessToken() {
     }
   })();
   return starting.refreshing;
+}
+
+async function authorizedRequest(route, options = {}) {
+  const epoch = sessionEpoch;
+  try {
+    const token = await accessToken();
+    if (!token || epoch !== sessionEpoch) throw new AccessEnded();
+    let response = await request(route, { ...options, token });
+    if (response.status === 401 && epoch === sessionEpoch) {
+      const renewed = await accessToken(session?.token === token);
+      if (!renewed || epoch !== sessionEpoch) throw new AccessEnded();
+      response = await request(route, { ...options, token: renewed });
+      if (response.status === 401) throw new AccessEnded();
+    }
+    return response;
+  } catch (error) {
+    if (error instanceof AccessEnded && epoch === sessionEpoch) leave({ message: 'Срок входа истёк. Войдите ещё раз.' });
+    throw error;
+  }
 }
 
 function showSignIn({ message = '', initial = false } = {}) {
@@ -76,7 +112,7 @@ function signInError(form, message, field) {
     error.setAttribute('role', 'alert');
     button.before(error);
   }
-  error.textContent = message;
+  error.textContent = displayText(message);
   const target = field || button;
   target.setAttribute('aria-describedby', error.id);
   target.focus();
@@ -101,35 +137,55 @@ async function signIn(event) {
     if ([400, 401, 403].includes(response.status)) return signInError(form, authError, form.elements.password);
     if (!response.ok) throw new Error('Sign-in unavailable');
     setSession(await response.json());
-    const sheet = new FinalVoting(async (rpc, body) => {
-      const token = await accessToken();
-      if (!token) throw new Error('Session expired');
-      return request('/rest/v1/rpc/' + rpc, { method: 'POST', body, token });
-    }, () => {
-      if (voting === sheet && cabinet.querySelector('.works')) showCatalogue();
-    }, session.userId);
+  } catch {
+    return signInError(form, 'Кабинет временно недоступен. Попробуйте войти ещё раз.');
+  }
+  await openCabinet();
+}
+
+function sessionNotice(message, retry) {
+  cabinet.innerHTML = headerContent(formOptions) + cabinetMarkup('<main class="scene"><div class="wrap content">' +
+    '<p role="status">' + message + '</p>' + (retry ? '<button class="secondary" data-retry>Повторить загрузку</button>' : '') +
+    '</div></main>');
+  bindLogout();
+  if (retry) cabinet.querySelector('[data-retry]').onclick = openCabinet;
+}
+
+async function openCabinet() {
+  const epoch = sessionEpoch;
+  sessionNotice('Открываем кабинет…', false);
+  const sheet = new FinalVoting((rpc, body) => authorizedRequest('/rest/v1/rpc/' + rpc, { method: 'POST', body }), () => {
+    if (voting === sheet && cabinet.querySelector('.works')) showCatalogue();
+  }, session.userId);
+  try {
     const [result] = await Promise.all([
-      request('/rest/v1/jury_works?select=id,title,bytes&order=position', { token: session.token }),
-      sheet.load().catch(() => {}) // Each work offers a retry if its score sheet was unavailable.
+      authorizedRequest('/rest/v1/jury_works?select=id,title,bytes&order=position'),
+      sheet.load().catch(() => {}) // A work can retry its score sheet independently.
     ]);
+    if (epoch !== sessionEpoch) return;
+    if (result.status === 403) return leave({ message: 'Для этого аккаунта доступ к работам закрыт.' });
     if (!result.ok) throw new Error('Catalogue unavailable');
     const items = await result.json();
-    if (Array.isArray(items) && items.length === 0) {
-      resetSession();
-      signInError(form, 'Для этого аккаунта доступ к работам закрыт.', form.elements.login);
-    } else {
-      if (!Array.isArray(items) || items.length !== 15 || !items.every(item =>
-        workId.test(item.id) && typeof item.title === 'string' && Number.isSafeInteger(item.bytes) && item.bytes > 0)) {
-        throw new Error('Incomplete catalogue');
-      }
-      works = items;
-      voting = sheet;
-      showCatalogue();
+    if (epoch !== sessionEpoch) return;
+    if (Array.isArray(items) && items.length === 0) return leave({ message: 'Для этого аккаунта доступ к работам закрыт.' });
+    if (!Array.isArray(items) || items.length !== 15 || !items.every(item =>
+      workId.test(item.id) && typeof item.title === 'string' && Number.isSafeInteger(item.bytes) && item.bytes > 0)) {
+      throw new Error('Incomplete catalogue');
     }
+    works = items;
+    voting = sheet;
+    showCatalogue();
   } catch {
-    resetSession();
-    signInError(form, 'Кабинет временно недоступен. Попробуйте войти ещё раз.');
+    if (epoch === sessionEpoch) sessionNotice('Не удалось загрузить кабинет. Можно повторить попытку.', true);
   }
+}
+
+function bindLogout() {
+  cabinet.querySelector('header form').addEventListener('submit', event => {
+    event.preventDefault();
+    try { sessionStorage.removeItem(loginKey); } catch { /* Optional remembered login. */ }
+    leave(undefined, true);
+  });
 }
 
 function cancelDownload() {
@@ -158,11 +214,7 @@ function showCatalogue() {
   }) : catalogueContent(works, workId => '#work/' + workId, voting?.scored);
   cabinet.innerHTML = headerContent(formOptions) + content;
   document.title = (work?.title ?? 'Работы финалистов') + ' · Меняя привычное';
-  cabinet.querySelector('header form').addEventListener('submit', event => {
-    event.preventDefault();
-    try { sessionStorage.removeItem(loginKey); } catch { /* Optional remembered login. */ }
-    leave();
-  });
+  bindLogout();
   const focus = (kind === 'list' && document.getElementById(id)) || cabinet.querySelector('main h1');
   if (focus.tagName === 'H1') focus.tabIndex = -1;
   focus.focus();
@@ -172,18 +224,20 @@ function showCatalogue() {
   }
 }
 
-function resetSession() {
+function resetSession(revoke) {
+  sessionEpoch++;
+  try { sessionStorage.removeItem(sessionKey); } catch { /* Storage may be disabled. */ }
   const token = session?.token;
   session = null;
   works = [];
   voting = null;
   cancelDownload();
   forgetPdf();
-  if (token) request('/auth/v1/logout?scope=local', { method: 'POST', token }).catch(() => {});
+  if (revoke && token) request('/auth/v1/logout?scope=local', { method: 'POST', token }).catch(() => {});
 }
 
-function leave(feedback) {
-  resetSession();
+function leave(feedback, revoke = false) {
+  resetSession(revoke);
   showSignIn(feedback);
 }
 
@@ -211,12 +265,9 @@ async function openPdf(work, button) {
   }
   notice.textContent = '';
   try {
-    const token = await accessToken();
-    if (pendingPdf !== download) return;
-    if (!token) return leave({ message: 'Войдите ещё раз, чтобы открыть работу.' });
     if (!cachedPdf || cachedPdf.id !== work.id) {
-      const response = await request('/storage/v1/object/authenticated/jury-final/' + work.id + '.pdf', {
-        token, signal: download.abort.signal
+      const response = await authorizedRequest('/storage/v1/object/authenticated/jury-final/' + work.id + '.pdf', {
+        signal: download.abort.signal
       });
       if (!response.ok) throw new Error('PDF unavailable');
       const body = await response.blob();
@@ -240,7 +291,7 @@ async function openPdf(work, button) {
   } catch {
     if (pendingPdf !== download) return;
     preview?.close();
-    notice.textContent = 'PDF не загрузился. Попробуйте открыть его ещё раз.';
+    notice.textContent = displayText('PDF не загрузился. Попробуйте открыть его ещё раз.');
   } finally {
     if (pendingPdf === download) {
       pendingPdf = null;
@@ -252,4 +303,6 @@ async function openPdf(work, button) {
 }
 
 window.addEventListener('hashchange', showCatalogue);
-showSignIn({ initial: true });
+session = readSession();
+if (session) openCabinet();
+else showSignIn({ initial: true });

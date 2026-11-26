@@ -1,3 +1,8 @@
+import { russianSpacing, typesetText } from './typography.js?v=63f24b861472';
+
+export const displayText = russianSpacing;
+export const cabinetMarkup = html => typesetText(html, { formatFormText: true });
+
 export const escape = value => String(value).replace(/[&<>"']/g, character => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
 }[character]));
@@ -19,7 +24,7 @@ export function signInContent({ next = '', login = '', message = '', logo = '/lo
   method = 'post', action = '/login', ready = true } = {}) {
   const feedback = message ? '<p id="login-error" class="form-error" role="alert">' + escape(message) + '</p>' : '';
   const passwordAttributes = message ? ' autofocus aria-describedby="login-error"' : '';
-  return `
+  return cabinetMarkup(`
 <main class="sign-in-page">
   <section class="cover" aria-labelledby="contest">
     <div class="wrap hero">
@@ -30,7 +35,7 @@ export function signInContent({ next = '', login = '', message = '', logo = '/lo
   </section>
   <section class="login-section" aria-labelledby="sign-in">
     <form class="login-card" method="` + method + `" action="` + action + `">
-      <h2 id="sign-in">Вход для жюри</h2>
+      <h2 id="sign-in">Вход <span class="word-group">для<wbr> жюри</span></h2>
       <input type="hidden" name="next" value="` + escape(next) + `">
       <label for="login">Логин</label>
       <input id="login" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="254" value="` + escape(login) + `">
@@ -39,14 +44,14 @@ export function signInContent({ next = '', login = '', message = '', logo = '/lo
       <button class="primary"` + (ready ? '' : ' disabled') + `>Войти</button>
     </form>
   </section>
-</main>`;
+</main>`);
 }
 
 export function catalogueContent(works, href = id => '/works/' + id, scored = null) {
   const links = works.map(work => '<li><a class="work-link" id="' + work.id + '" href="' + href(work.id) + '">' +
     escape(work.title) + (scored?.has(work.id) ? ' <small>Оценена</small>' : '') + '</a></li>').join('');
   const progress = scored ? '<p class="sheet-progress">Оценено ' + scored.size + ' из ' + works.length + '</p>' : '';
-  return '<main class="scene"><div class="wrap content"><p class="stage">Третий этап</p><h1>Работы финалистов</h1>' + progress + '<ul class="works">' + links + '</ul></div></main>';
+  return cabinetMarkup('<main class="scene"><div class="wrap content"><p class="stage">Третий этап</p><h1>Работы финалистов</h1>' + progress + '<ul class="works">' + links + '</ul></div></main>');
 }
 
 export function workContent(work, {
@@ -55,7 +60,7 @@ export function workContent(work, {
   votingContent = '<p class="status">Оценивание пока недоступно.</p>'
 } = {}) {
   const megabytes = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(work.bytes / 1_000_000);
-  return `
+  return cabinetMarkup(`
 <main class="scene"><div class="wrap content">
   <a class="return" href="` + catalogueHref + `">К списку работ</a>
   <h1>` + escape(work.title) + `</h1>
@@ -64,7 +69,7 @@ export function workContent(work, {
     <span>` + megabytes + ` МБ</span>
   </div>
   ` + votingContent + `
-</div></main>`;
+</div></main>`);
 }
 
 export function signInPage(options) {
@@ -80,6 +85,6 @@ export function workPage(work) {
 }
 
 export function statusPage(title, message) {
-  return page(title, '<main class="scene"><div class="wrap content"><h1>' + escape(title) +
-    '</h1><p class="status">' + escape(message) + '</p><a href="/works">К работам</a></div></main>');
+  return page(title, cabinetMarkup('<main class="scene"><div class="wrap content"><h1>' + escape(title) +
+    '</h1><p class="status">' + escape(message) + '</p><a href="/works">К работам</a></div></main>'));
 }

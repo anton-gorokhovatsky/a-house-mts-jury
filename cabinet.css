@@ -54,6 +54,7 @@ h1, h2 { font-family: var(--display-face); font-weight: 400; letter-spacing: nor
 .hero p { margin-top: clamp(1rem, 3vw, 1.5rem); font-size: clamp(1rem, .85rem + .7vw, 1.5rem); line-height: 1.2; text-transform: uppercase; }
 .login-section { flex: 1; background: linear-gradient(#fff, #d9e1f3); padding: 1rem clamp(20px, 4.5vw, 4rem) 3rem; }
 .login-card { background: #e8ebf3; border-radius: .5rem; max-width: 35rem; margin: 0 auto; padding: clamp(1.5rem, 5vw, 4rem) clamp(24px, 5vw, 4rem); }
+.word-group { display: inline-block; max-inline-size: 100%; }
 .login-card h2 { font-size: clamp(1.32rem, 1rem + 1.2vw, 2rem); line-height: 1.12; margin-bottom: clamp(1.35rem, 2.5vw, 1.85rem); text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
 .login-card label { display: block; margin: 1.15rem 0 .5rem; }
 .login-card input { display: block; min-height: 3.15rem; width: 100%; padding: .7rem .85rem; color: #11121a; background: white; border: 1px solid #70798a; border-radius: .35rem; }
@@ -105,11 +106,60 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
 .ballot { margin-top: clamp(2rem, 5vw, 4rem); max-width: 45rem; font-synthesis-weight: none; }
 .ballot, .ballot legend { overflow-wrap: anywhere; }
 .ballot legend { max-width: 100%; }
-.ballot h2 { font-size: clamp(1.5rem, 1.12rem + 1.6vw, 2.4rem); line-height: 1.12; }
+.ballot h2 { margin-inline-start: clamp(-.055em, 1.2px - .29cqi, 0px); font-size: clamp(1.5rem, 1.12rem + 1.6vw, 2.4rem); line-height: 1.12; }
 .ballot small { font-size: .9rem; font-weight: normal; }
 .ballot .scale { margin: .5rem 0; }
-.scale summary, .ballot-rules { display: list-item; padding-block: .7rem; cursor: pointer; width: fit-content; min-height: 2.75rem; }
+.scale > summary, .ballot-rules { padding-block: .65rem; cursor: pointer; width: fit-content; min-height: 2.75rem; }
+.scale > summary {
+  display: grid;
+  grid-template-columns: .55em minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: .48em;
+  max-inline-size: 100%;
+  list-style: none;
+}
+.scale > summary::-webkit-details-marker { display: none; }
+.scale > summary::before {
+  content: '';
+  inline-size: .43em;
+  block-size: .43em;
+  border: solid currentColor;
+  border-width: 0 .095em .095em 0;
+  align-self: start;
+  margin-block-start: .46em;
+  transform: rotate(-45deg);
+}
+.scale[open] > summary::before { transform: rotate(45deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .scale > summary::before { transition: transform 150ms ease-out; }
+  @supports (transition-behavior: allow-discrete) and selector(details::details-content) {
+    .scale::details-content {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transition: grid-template-rows 160ms ease-out, opacity 140ms ease-out, content-visibility 160ms allow-discrete;
+    }
+    .scale[open]::details-content { grid-template-rows: 1fr; opacity: 1; }
+    .scale-body { min-block-size: 0; overflow: clip; }
+    .scale:has(> summary:focus-visible)::details-content { transition-duration: 0s; }
+  }
+}
 .ballot-rules { display: inline-block; }
+.scale-values li {
+  display: grid;
+  grid-template-columns: .7em .88em minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: .28em;
+}
+.scale-explanation { display: block; margin: .2em 0 .55em; }
+.scale-number, .rubric-weights { font-variant-numeric: tabular-nums; }
+.rubric-weights { width: 100%; border-collapse: collapse; text-align: start; }
+.rubric-weights :is(th, td) { text-align: start; vertical-align: baseline; padding: .4em .55em .4em 0; }
+.rubric-weights tr > :first-child, .rubric-weights tr > :last-child { width: 1%; white-space: nowrap; overflow-wrap: normal; }
+.rubric-weights :is(th, td):last-child { text-align: end; padding-inline-end: 0; }
+.rubric-weights thead, .rubric-weights tfoot { color: #414859; }
+.rubric-weights :is(tbody, tfoot) tr { border-top: 1px solid #bac0ce; }
+.rubric-weights td p { margin: .5em 0 0; }
 .scale ul { list-style: none; padding: 0; margin: 0 0 .6rem; }
 .scale li, .scale p, .criterion-help { line-height: 1.5; }
 .criterion-help, .ballot-note { max-inline-size: 68ch; }
@@ -135,10 +185,15 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
 .secondary { margin-top: .5rem; min-height: 2.75rem; padding: .55rem .85rem; color: #161722; background: #fff; border: 1px solid #747b8d; border-radius: .3rem; }
 .ballot button:disabled { cursor: default; }
 .scale .guide-list { list-style: disc; padding-inline-start: 1.3rem; }
-.guide-list li + li, .nominations dd { margin-top: .35rem; }
+.guide-list li + li { margin-top: .45rem; }
 .ballot .nominations { margin-top: 1.5rem; }
-.nominations dl, .nominations dd { margin-inline: 0; }
-.nominations dt { font-size: 1.125rem; }
-.nominations dt:not(:first-child) { margin-top: 1rem; }
-.nominations dd { line-height: 1.45; }
+.nominations section + section { margin-block-start: 1.35rem; }
+.nominations h3, .nominations h4 {
+  margin: 0 0 .3em;
+  font: 400 clamp(1.05rem, .96rem + .45vw, 1.3rem) / 1.2 var(--display-face);
+  text-wrap: balance;
+}
+.nominations p { margin: 0; }
+.nominations p + p { margin-top: .35em; }
+.nominations h4 { font-family: inherit; }
 .ballot-sources { display: flex; flex-wrap: wrap; gap: 0 1.4rem; }
