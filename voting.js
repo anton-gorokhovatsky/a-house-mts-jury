@@ -1,15 +1,34 @@
-import { escape } from './views.js?v=811b70d00447';
+import { escape } from './views.js?v=dc4f25be7ec5';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
   'Соответствует в меньшей степени', 'Соответствует не полностью', 'Соответствует в большой степени', 'Полностью соответствует'
 ];
+const finalRubric = 'final_50_50';
+const conceptScale = ['Отсутствует', 'Плохо / не соответствует', 'Неудовлетворительно / соответствует в меньшей степени',
+  'Удовлетворительно / соответствует не полностью', 'Хорошо / соответствует в большой степени', 'Отлично / полностью соответствует'];
 const feasibilityScale = ['Невозможно оценить', 'Не реализуемо', 'Скорее не реализуемо', 'Частично реализуемо', 'Скорее реализуемо', 'Реализуемо'];
 const descriptions = {
   brief: 'Глубина проработки идеи и сила заложенных смыслов.',
   art: 'Оцените визуальное воплощение идеи с учётом выбранного подхода: интеграция в среду или выраженный акцент.',
-  economics: 'CAPEX — затраты на строительство, OPEX — расходы на эксплуатацию.'
+  economics: 'CAPEX — затраты на строительство, OPEX — расходы на эксплуатацию.',
+  concept: 'Оцените силу и потенциал идеи, заложенные смыслы и их визуальное воплощение с учётом выбранного подхода к интеграции объекта в пространство.',
+  technical_review: 'Поставьте один балл за техническое решение в целом. Этот критерий заполняет представитель технического блока МТС.'
 };
+const conceptGuide = '<details class="scale"><summary>Что учитывать при оценке концепции</summary><ul class="guide-list">' +
+  '<li>Чем авторы обосновали выбор концепции и что в ней нового?</li>' +
+  '<li>Вызывает ли идея интерес и может ли стать предметом архитектурной или культурной дискуссии?</li>' +
+  '<li>Насколько выразителен образ и какие эмоции он вызывает?</li>' +
+  '<li>Передаёт ли визуальное решение заложенные смыслы? В чём его оригинальность?</li>' +
+  '<li>Воспринимается ли объект как понятный, безопасный и дружелюбный? Ассоциируется ли он с комфортом?</li></ul></details>';
+const nominations = [
+  ['Лучшее контекстуальное решение', 'Как вышка становится естественной частью конкретного городского или природного ландшафта?'],
+  ['Лучшее архитектурное высказывание', 'Оригинальный, запоминающийся образ переосмысляет облик телекоммуникационной инфраструктуры и может стать ориентиром или символом места.'],
+  ['Лучшее масштабируемое решение', 'Оцените потенциал тиражирования, адаптацию к разным локациям и рациональное использование ресурсов при монтаже и эксплуатации.'],
+  ['Лучший архитектурный эксперимент / виртуальное решение', 'Смелая концепция предлагает новую функцию, типологию, материал или пространственное решение. Для этой номинации реализуемость необязательна.']
+];
+const nominationsGuide = '<details class="scale nominations"><summary>Четыре номинации конкурса</summary><dl>' +
+  nominations.map(([name, description]) => '<dt>' + escape(name) + '</dt><dd>' + escape(description) + '</dd>').join('') + '</dl></details>';
 
 function scaleDetails(title, scale, note = '') {
   return '<details class="scale"><summary>' + title + '</summary><ul>' +
@@ -17,19 +36,20 @@ function scaleDetails(title, scale, note = '') {
     '</ul>' + (note ? '<p>' + note + '</p>' : '') + '</details>';
 }
 
-function field(criterion, answers) {
+function field(criterion, answers, standardScale) {
   const key = escape(criterion.key);
   const selected = answers[criterion.key];
-  const choices = (criterion.key === 'feasibility' ? feasibilityScale : generalScale).map((meaning, i) =>
+  const feasibility = criterion.key === 'feasibility' || criterion.key === 'technical_review';
+  const choices = (feasibility ? feasibilityScale : standardScale).map((meaning, i) =>
     '<label class="score-choice"><input type="radio" name="' + key + '" value="' + i +
     '" aria-label="' + i + ' — ' + escape(meaning) + '" required' + (selected === i ? ' checked' : '') +
     '><span>' + i + '</span></label>').join('');
   const site = criterion.site_only ? '<label class="no-site"><input type="radio" name="' + key +
     '" value="na"' + (selected === null ? ' checked' : '') + '> Место размещения не определено</label>' : '';
   const help = descriptions[criterion.key];
-  const specialScale = criterion.key === 'feasibility'
-    ? scaleDetails('Шкала реализуемости', feasibilityScale, 'Средний балл ниже 4 исключает призовое место и рекомендацию к реализации. При среднем балле ниже 2 работа также не рекомендуется к выставке.')
-    : '';
+  const specialScale = feasibility
+    ? scaleDetails('Шкала реализуемости', feasibilityScale, 'По пункту 7.4 положения балл ниже 4 исключает призовое место и рекомендацию к реализации. При среднем балле ниже 2 работа также не рекомендуется к выставке.')
+    : criterion.key === 'concept' ? conceptGuide : '';
   return '<fieldset class="criterion"><legend>' + escape(criterion.label) +
     ' <small>Вес ' + criterion.weight + ' %</small></legend>' +
     (help ? '<p class="criterion-help">' + escape(help) + '</p>' : '') + specialScale +
@@ -50,12 +70,14 @@ export class FinalVoting {
   }
 
   async load() {
-    const response = await this.call('jury_final_sheet', {});
+    const response = await this.call('jury_final_rubric_sheet', { p_rubric: null });
     if (!response.ok) throw new Error('Sheet unavailable');
     const data = await response.json();
-    if (!data || !['juror', 'technical', 'observer'].includes(data.role) || !Array.isArray(data.criteria) ||
+    if (!data || !['original', finalRubric].includes(data.rubric) ||
+        !['juror', 'technical', 'observer'].includes(data.role) || !Array.isArray(data.criteria) ||
         !Array.isArray(data.ballots) || typeof data.accepting !== 'boolean' ||
         (data.role !== 'observer' && !data.criteria.length)) throw new Error('Invalid score sheet');
+    if (this.data && this.data.rubric !== data.rubric) this.drafts.clear();
     this.data = data;
     this.saved = new Map(data.ballots.map(ballot => [ballot.work_id, ballot]));
   }
@@ -78,26 +100,34 @@ export class FinalVoting {
     const saved = this.saved.get(id);
     let draft = this.drafts.get(id);
     if (!draft) {
-      draft = { answers: { ...saved?.answers }, comment: saved?.comment ?? '', revision: saved?.revision ?? 0 };
+      draft = { rubric: this.data.rubric, answers: { ...saved?.answers }, comment: saved?.comment ?? '', revision: saved?.revision ?? 0 };
       this.drafts.set(id, draft);
     }
     const closed = !this.data.accepting;
+    const updated = this.data.rubric === finalRubric;
+    const standardScale = updated ? conceptScale : generalScale;
     const message = draft.message ?? (saved ? 'Оценка сохранена.' : '');
     const rules = this.data.regulations_url;
     const rulesLink = typeof rules === 'string' && /^https:\/\/disk\.360\.yandex\.ru\/d\/[\w-]+$/.test(rules)
       ? '<a class="ballot-rules" href="' + escape(rules) + '" target="_blank" rel="noopener noreferrer">Положение о работе жюри</a>' : '';
+    const source = this.data.criteria_url;
+    const criteriaLink = updated && typeof source === 'string' && /^https:\/\/docs\.google\.com\/document\/d\/[\w-]+(?:\/edit)?$/.test(source)
+      ? '<a class="ballot-rules" href="' + escape(source) + '" target="_blank" rel="noopener noreferrer">Критерии третьего этапа</a>' : '';
     region.innerHTML = '<h2>Ваша оценка</h2>' +
       (closed ? '<p class="ballot-note">Голосование закрыто.</p>' : '') +
-      scaleDetails('Как выставлять баллы', generalScale) +
-      rulesLink +
+      (updated ? '<p class="ballot-note">Половину итогового балла даёт средняя оценка концепции членами жюри, вторую половину — техническая оценка МТС.</p>' : '') +
+      scaleDetails(updated ? 'Шкала оценки концепции' : 'Как выставлять баллы', standardScale) +
+      (updated ? '' : rulesLink) +
       '<form><fieldset class="ballot-fields"' + (closed || draft.saving ? ' disabled' : '') + '><legend class="sr-only">Оценочный лист</legend>' +
-      this.data.criteria.map(c => field(c, draft.answers)).join('') +
+      this.data.criteria.map(c => field(c, draft.answers, standardScale)).join('') +
       '<label class="comment-label" for="ballot-comment">Комментарий <small>по желанию</small></label>' +
       '<textarea id="ballot-comment" name="comment" rows="3" maxlength="5000">' + escape(draft.comment) + '</textarea></fieldset>' +
       (closed ? '' : '<button class="primary save-ballot" type="submit"' + (draft.saving ? ' disabled' : '') + '>' +
         (draft.saving ? 'Сохраняем…' : saved ? 'Сохранить изменения' : 'Сохранить оценку') + '</button>') +
       '<p class="ballot-feedback" role="status" aria-live="polite"></p>' +
-      (draft.conflict ? '<button type="button" class="secondary" data-reload>Загрузить сохранённую версию</button>' : '') + '</form>';
+      (draft.conflict ? '<button type="button" class="secondary" data-reload>' +
+        (draft.rubricChanged ? 'Открыть действующий лист' : 'Загрузить сохранённую версию') + '</button>' : '') + '</form>' +
+      (updated ? nominationsGuide + '<div class="ballot-sources">' + criteriaLink + rulesLink + '</div>' : '');
     const form = region.querySelector('form');
     const feedback = form.querySelector('[role="status"]');
     feedback.textContent = message;
@@ -136,10 +166,15 @@ export class FinalVoting {
     button.textContent = 'Сохраняем…';
     form.querySelector('[role="status"]').textContent = draft.message;
     try {
-      const response = await this.call('jury_save_final_ballot', {
-        p_work_id: id, p_answers: draft.answers, p_comment: draft.comment, p_revision: draft.revision
+      const response = await this.call('jury_save_rubric_ballot', {
+        p_rubric: draft.rubric, p_work_id: id, p_answers: draft.answers, p_comment: draft.comment, p_revision: draft.revision
       });
-      if (response.status === 409) {
+      if (this.data.rubric !== draft.rubric) return;
+      if (response.status === 412) {
+        draft.conflict = true;
+        draft.rubricChanged = true;
+        draft.message = 'Организатор обновил критерии. Эта оценка не сохранена. Откройте действующий лист, чтобы оценить работу по новым правилам.';
+      } else if (response.status === 409) {
         draft.conflict = true;
         draft.message = 'Оценка была изменена в другой вкладке. Ваш ввод сохранён в этой форме. Загрузите актуальную версию перед редактированием.';
       } else if (response.status === 403 && (await response.json()).message === 'VOTING_CLOSED') {
@@ -148,7 +183,7 @@ export class FinalVoting {
       } else {
         if (!response.ok) throw new Error('Save unavailable');
         const ballot = await response.json();
-        if (ballot?.work_id !== id || !Number.isInteger(ballot.revision) || ballot.revision < 1) throw new Error('Unconfirmed save');
+        if (ballot?.rubric !== draft.rubric || ballot.work_id !== id || !Number.isInteger(ballot.revision) || ballot.revision < 1) throw new Error('Unconfirmed save');
         this.saved.set(id, ballot);
         draft.revision = ballot.revision;
         draft.message = 'Оценка сохранена.';

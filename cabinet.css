@@ -75,3 +75,11 @@ p, h1, h2 { margin: 0; }
 .ballot-note, .ballot-feedback:not(:empty) { margin-top: .8rem; line-height: 1.4; }
 .secondary { margin-top: .5rem; min-height: 2.75rem; padding: .55rem .85rem; color: #161722; background: #fff; border: 1px solid #747b8d; border-radius: .3rem; }
 .ballot button:disabled { cursor: default; }
+.scale .guide-list { list-style: disc; padding-inline-start: 1.3rem; }
+.guide-list li + li, .nominations dd { margin-top: .35rem; }
+.ballot .nominations { margin-top: 1.5rem; }
+.nominations dl, .nominations dd { margin-inline: 0; }
+.nominations dt { font-weight: bold; }
+.nominations dt:not(:first-child) { margin-top: 1rem; }
+.nominations dd { line-height: 1.45; }
+.ballot-sources { display: flex; flex-wrap: wrap; gap: 0 1.4rem; }
