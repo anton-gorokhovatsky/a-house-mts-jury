@@ -1,8 +1,8 @@
-import { backend } from './config.js?v=ad245327f1c2';
-import { cabinetMarkup, displayText, catalogueContent, headerContent, signInContent, workContent } from './views.js?v=ad245327f1c2';
-import { FinalVoting } from './voting.js?v=ad245327f1c2';
-import { FinalGallery } from './gallery.js?v=ad245327f1c2';
-import { rankingContent } from './ranking.js?v=ad245327f1c2';
+import { backend } from './config.js?v=93d542cc5b3d';
+import { cabinetMarkup, displayText, catalogueContent, headerContent, signInContent, workContent } from './views.js?v=93d542cc5b3d';
+import { FinalVoting } from './voting.js?v=93d542cc5b3d';
+import { FinalGallery } from './gallery.js?v=93d542cc5b3d';
+import { rankingContent } from './ranking.js?v=93d542cc5b3d';
 
 const cabinet = document.querySelector('#cabinet');
 const formOptions = { logo: './logo.svg', method: 'dialog', action: '#' };
@@ -161,7 +161,7 @@ async function openCabinet() {
   sessionNotice('Открываем кабинет…', false);
   const sheet = new FinalVoting((rpc, body) => authorizedRequest('/rest/v1/rpc/' + rpc, { method: 'POST', body }), () => {
     if (voting === sheet && (cabinet.querySelector('.works') || location.hash.startsWith('#rating') && !cabinet.querySelector('#voting'))) showCatalogue();
-  }, session.userId);
+  }, session.userId, loadRegulations);
   try {
     const [result] = await Promise.all([
       authorizedRequest('/rest/v1/jury_works?select=id,title,bytes&order=position'),
@@ -207,28 +207,34 @@ function forgetPdf() {
   cachedPdf = null;
 }
 
-let rulesLookup;
+let regulationsFile;
 
-function linkRegulations() {
-  const folder = voting?.data?.regulations_url;
-  if (typeof folder !== 'string' || !/^https:\/\/disk\.360\.yandex\.ru\/d\/[\w-]+$/.test(folder)) return;
-  if (rulesLookup?.folder !== folder) {
-    const api = new URL('https://cloud-api.yandex.net/v1/disk/public/resources');
-    api.searchParams.set('public_key', folder);
-    api.searchParams.set('fields', '_embedded.items.name,_embedded.items.mime_type,_embedded.items.public_url');
-    const file = fetch(api, { credentials: 'omit', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(6000) })
-      .then(async response => response.ok ? (await response.json())._embedded?.items : null)
-      .then(items => items?.find(item => item.name === 'Положение_о_работе_Жюри_Меняя_привычное.pdf' &&
-        item.mime_type === 'application/pdf')?.public_url)
-      .catch(() => null);
-    rulesLookup = { folder, file };
+function forgetRegulations() {
+  if (regulationsFile) URL.revokeObjectURL(regulationsFile.href);
+  regulationsFile = null;
+}
+
+async function loadRegulations(source) {
+  if (!source) return null;
+  if (regulationsFile?.source === source) return regulationsFile.href;
+  const epoch = sessionEpoch;
+  try {
+    const path = new URL(source).pathname;
+    const response = await authorizedRequest('/storage/v1/object/authenticated/jury-final/regulations' + path + '.pdf', {
+      signal: AbortSignal.timeout(5000)
+    });
+    if (!response.ok) return source;
+    const pdf = await response.blob();
+    if (epoch !== sessionEpoch) return null;
+    if (pdf.type !== 'application/pdf' || !pdf.size) return source;
+    if (regulationsFile?.source !== source) {
+      forgetRegulations();
+      regulationsFile = { source, href: URL.createObjectURL(pdf) };
+    }
+    return regulationsFile.href;
+  } catch {
+    return source;
   }
-  const current = rulesLookup;
-  current.file.then(url => {
-    if (rulesLookup !== current) return;
-    if (typeof url !== 'string' || !/^https:\/\/(?:yadi\.sk|disk\.(?:360\.)?yandex\.ru)\/i\/[\w-]+$/.test(url)) return;
-    for (const link of cabinet.querySelectorAll('a[data-regulations]')) if (link.href === folder) link.href = url;
-  });
 }
 
 function showCatalogue() {
@@ -257,7 +263,7 @@ function showCatalogue() {
   } else if (ranked) {
     content = rankingContent(works, voting, sort);
   } else {
-    content = catalogueContent(works, key => '#work/' + key, voting.scored, voting.data);
+    content = catalogueContent(works, key => '#work/' + key, voting.scored, voting.data, voting.regulationsUrl);
     if (!voting.data) content = content.replace('</ul>', '</ul><p class="status">Не удалось загрузить регламент и ваши оценки.</p>' +
       '<button type="button" class="secondary" data-retry>Повторить загрузку</button>');
   }
@@ -282,7 +288,6 @@ function showCatalogue() {
     closeGallery = gallery.mount(cabinet.querySelector('.sheets'), work);
     voting.mount(work.id, cabinet.querySelector('#voting'));
   }
-  linkRegulations();
 }
 
 function resetSession(revoke) {
@@ -295,7 +300,7 @@ function resetSession(revoke) {
   closeGallery?.();
   closeGallery = null;
   gallery = null;
-  rulesLookup = null;
+  forgetRegulations();
   cancelDownload();
   forgetPdf();
   if (revoke && token) request('/auth/v1/logout?scope=local', { method: 'POST', token }).catch(() => {});

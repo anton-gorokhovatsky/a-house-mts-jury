@@ -58,7 +58,7 @@ h1, h2 { font-family: var(--display-face); font-weight: 400; letter-spacing: nor
 [data-edges^="medium"] { --first-bearing: .045em; }
 [data-edges$="tight"] { --wrap-bearing: .008em; }
 [data-edges$="medium"] { --wrap-bearing: .045em; }
-.work-link > [data-edges] { --stem-bearing: .078em; display: block; }
+.work-link > [data-edges] { --stem-bearing: .078em; display: block; min-inline-size: 0; }
 .wrap { --gutter: clamp(min(1.25rem, 6.25vw), 4.5vw, 4rem); width: min(100%, var(--width)); padding-inline: var(--gutter); margin-inline: auto; }
 .sign-in-page { display: flex; flex-direction: column; min-block-size: 100svh; }
 .cover { background: var(--sky); }
@@ -147,12 +147,28 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
   padding-block: .5rem;
   overflow-wrap: anywhere;
 }
-.work-link { width: 100%; border-bottom: 1px solid #3e4558; text-decoration: none; font-size: clamp(1.2rem, 1rem + .85vw, 1.75rem); line-height: 1.2; }
+.work-link { width: 100%; column-gap: .75rem; border-bottom: 1px solid #3e4558; text-decoration: none; font-size: clamp(1.2rem, 1rem + .85vw, 1.75rem); line-height: 1.2; }
 .return { display: inline-flex; align-items: center; min-height: 2.75rem; margin-bottom: .9rem; }
 .materials { margin-top: clamp(1.5rem, 4vw, 3rem); display: flex; align-items: center; flex-wrap: wrap; gap: .65rem 1.1rem; }
 .status { margin-top: 1.7rem; margin-bottom: 1rem; line-height: 1.45; }
 .sheet-progress { margin-top: 1rem; }
-.work-link small { display: inline-block; margin-inline-start: .55em; font-size: .84rem; }
+.work-mark {
+  box-sizing: border-box;
+  flex: none;
+  --mark-size: clamp(1.75rem, 5vw, 2.5rem);
+  inline-size: var(--mark-size);
+  block-size: var(--mark-size);
+  margin-inline-start: auto;
+  border: 2px solid #11121a;
+  border-radius: 16%;
+  color: white;
+}
+.work-mark.is-scored { background: #11121a; }
+.work-mark svg { display: block; inline-size: 100%; block-size: 100%; }
+@media (forced-colors: active) {
+  .work-mark { border-color: CanvasText; }
+  .work-mark.is-scored { background: CanvasText; color: Canvas; forced-color-adjust: none; }
+}
 .ballot { margin-top: clamp(2rem, 5vw, 4rem); max-width: 45rem; font-synthesis-weight: none; }
 .ballot, .ballot legend { overflow-wrap: anywhere; }
 .ballot legend { max-width: 100%; }

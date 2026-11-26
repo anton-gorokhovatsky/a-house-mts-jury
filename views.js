@@ -1,4 +1,4 @@
-import { russianSpacing, typesetText } from './typography.js?v=ad245327f1c2';
+import { russianSpacing, typesetText } from './typography.js?v=93d542cc5b3d';
 
 export const displayText = russianSpacing;
 export const cabinetMarkup = html => typesetText(html, { formatFormText: true });
@@ -64,7 +64,7 @@ export function regulationsDocument(url) {
   return typeof url === 'string' && /^https:\/\/disk\.360\.yandex\.ru\/[di]\/[\w-]+$/.test(url) ? url : null;
 }
 
-function welcomeContent(sheet) {
+function welcomeContent(sheet, rulesUrl) {
   let instruction = 'Откройте работу, чтобы посмотреть листы проекта.';
   if (sheet?.role === 'observer') instruction = 'Вам доступны листы проектов и полные версии работ в PDF.';
   else if (sheet && !sheet.accepting) instruction = 'Приём оценок закрыт. Вы можете посмотреть проекты и свои сохранённые оценки.';
@@ -73,7 +73,7 @@ function welcomeContent(sheet) {
       ? 'Оцените концепцию каждой работы по шкале от 0 до 5. Отдельно по той же шкале оцените реализуемость, эффективность, конструктивную логику и соответствие техническим требованиям объекта.'
       : 'Изучите проекты финалистов и оцените концепцию каждой работы по шкале от 0 до 5.';
   } else if (sheet) instruction = 'Изучите проекты и заполните оценочный лист в карточке каждой работы.';
-  const url = regulationsDocument(sheet?.regulations_url);
+  const url = rulesUrl ?? regulationsDocument(sheet?.regulations_url);
   return '<div class="jury-welcome"><p>Рады видеть вас в жюри конкурса «Меняя привычное»!</p><p>' + instruction + '</p>' +
     (url ? '<a class="regulations-link" data-regulations href="' + escape(url) + '" target="_blank" rel="noopener noreferrer">Регламент жюри</a>' : '') + '</div>';
 }
@@ -105,11 +105,20 @@ export function signInContent({ next = '', login = '', message = '', logo = '/lo
 </main>`);
 }
 
-export function catalogueContent(works, href = id => '/works/' + id, scored = null, sheet) {
-  const links = works.map(work => '<li><a class="work-link" id="' + work.id + '" href="' + href(work.id) + '">' +
-    '<span ' + opticalEdges(work.title) + '>' + escape(work.title) + (scored?.has(work.id) ? ' <small>Оценена</small>' : '') + '</span></a></li>').join('');
+export function catalogueContent(works, href = id => '/works/' + id, scored = null, sheet, rulesUrl) {
+  const links = works.map(work => {
+    const saved = scored?.has(work.id);
+    let status = '';
+    if (saved !== undefined) {
+      const tick = saved ? '<svg viewBox="0 0 65 65" focusable="false"><path d="m15.04 30.04 12.42 12.32 22.72-22.71" fill="none" stroke="currentColor" stroke-width="4"/></svg>' : '';
+      status = '<span class="work-mark' + (saved ? ' is-scored' : '') + '" aria-hidden="true">' + tick + '</span>' +
+        '<span class="sr-only">' + (saved ? 'Оценена' : 'Ожидает оценки') + '</span>';
+    }
+    return '<li><a class="work-link" id="' + work.id + '" href="' + href(work.id) + '"><span ' +
+      opticalEdges(work.title) + '>' + escape(work.title) + '</span>' + status + '</a></li>';
+  }).join('');
   const progress = scored ? '<p class="sheet-progress">Оценено ' + scored.size + ' из ' + works.length + '</p>' : '';
-  return cabinetMarkup('<main class="scene"><div class="wrap content"><p class="stage">Третий этап</p>' + heading('Работы финалистов') + (sheet === undefined ? '' : welcomeContent(sheet)) + progress + '<ul class="works">' + links + '</ul></div></main>');
+  return cabinetMarkup('<main class="scene"><div class="wrap content"><p class="stage">Третий этап</p>' + heading('Работы финалистов') + (sheet === undefined ? '' : welcomeContent(sheet, rulesUrl)) + progress + '<ul class="works">' + links + '</ul></div></main>');
 }
 
 export function workContent(work, {

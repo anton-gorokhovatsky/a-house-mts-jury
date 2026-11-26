@@ -1,8 +1,8 @@
-import { cabinetMarkup, displayText, escape, heading, regulationsDocument } from './views.js?v=ad245327f1c2';
+import { cabinetMarkup, displayText, escape, heading, regulationsDocument } from './views.js?v=93d542cc5b3d';
 import {
   approachesIntro, approachRules, conceptHeading, conceptIntro, conceptQuestions, conceptScale, conceptScaleIntro,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalNotes
-} from './criteria.js?v=ad245327f1c2';
+} from './criteria.js?v=93d542cc5b3d';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -219,10 +219,11 @@ function forgetDraft(draft) {
 }
 
 export class FinalVoting {
-  constructor(call, onSaved, userId) {
+  constructor(call, onSaved, userId, loadRegulations) {
     this.call = call;
     this.onSaved = onSaved;
     this.userId = userId;
+    this.loadRegulations = loadRegulations;
     this.data = null;
     this.saved = new Map();
     this.drafts = new Map();
@@ -241,6 +242,7 @@ export class FinalVoting {
         !Array.isArray(data.ballots) || typeof data.accepting !== 'boolean' ||
         (data.role !== 'observer' && !data.criteria.length)) throw new Error('Invalid score sheet');
     if (this.data && this.data.rubric !== data.rubric) this.drafts.clear();
+    this.regulationsUrl = await this.loadRegulations(regulationsDocument(data.regulations_url));
     this.data = data;
     this.saved = new Map(data.ballots.map(ballot => [ballot.work_id, ballot]));
   }
@@ -282,7 +284,7 @@ export class FinalVoting {
     const updated = this.data.rubric === finalRubric;
     const standardScale = updated ? conceptScale : generalScale;
     const message = draft.message ?? (saved ? 'Оценка сохранена.' : '');
-    const rules = regulationsDocument(this.data.regulations_url);
+    const rules = this.regulationsUrl;
     const rulesLink = rules
       ? '<a class="ballot-rules" data-regulations href="' + escape(rules) + '" target="_blank" rel="noopener noreferrer">Положение о работе жюри</a>' : '';
     region.innerHTML = cabinetMarkup(heading('Ваша оценка', 2) +
