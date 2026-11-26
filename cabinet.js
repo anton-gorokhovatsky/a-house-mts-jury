@@ -1,8 +1,8 @@
-import { backend } from './config.js?v=93d542cc5b3d';
-import { cabinetMarkup, displayText, catalogueContent, headerContent, signInContent, workContent } from './views.js?v=93d542cc5b3d';
-import { FinalVoting } from './voting.js?v=93d542cc5b3d';
-import { FinalGallery } from './gallery.js?v=93d542cc5b3d';
-import { rankingContent } from './ranking.js?v=93d542cc5b3d';
+import { backend } from './config.js?v=3fcc07c97127';
+import { cabinetMarkup, displayText, catalogueContent, headerContent, signInContent, workContent } from './views.js?v=3fcc07c97127';
+import { FinalVoting } from './voting.js?v=3fcc07c97127';
+import { FinalGallery } from './gallery.js?v=3fcc07c97127';
+import { rankingContent } from './ranking.js?v=3fcc07c97127';
 
 const cabinet = document.querySelector('#cabinet');
 const formOptions = { logo: './logo.svg', method: 'dialog', action: '#' };

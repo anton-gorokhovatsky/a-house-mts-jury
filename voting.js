@@ -1,8 +1,8 @@
-import { cabinetMarkup, displayText, escape, heading, regulationsDocument } from './views.js?v=93d542cc5b3d';
+import { cabinetMarkup, displayText, escape, heading, regulationsDocument } from './views.js?v=3fcc07c97127';
 import {
   approachesIntro, approachRules, conceptHeading, conceptIntro, conceptQuestions, conceptScale, conceptScaleIntro,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalNotes
-} from './criteria.js?v=93d542cc5b3d';
+} from './criteria.js?v=3fcc07c97127';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',

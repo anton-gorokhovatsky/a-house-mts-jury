@@ -12,6 +12,7 @@
   <view id="sheet" viewBox="320 0 40 40"/>
   <view id="focus" viewBox="360 0 40 40"/>
   <view id="choice-hover" viewBox="280 0 40 40"/>
+  <view id="work-mark" viewBox="400 0 40 40"/>
   <view id="selected" viewBox="240 0 40 40"/>
   <use href="#frame" fill="#e8ebf3" stroke="#e8ebf3"/>
   <use href="#frame" x="40" fill="white" stroke="#70798a"/>
@@ -23,4 +24,5 @@
   <use href="#frame" x="280" fill="#e7ecf8" stroke="#53668c"/>
   <use href="#frame" x="320" fill="none" stroke="#868d9c"/>
   <use href="#frame" x="360" fill="none" stroke="#315cc0" stroke-width="2"/>
+  <use href="#frame" transform="translate(401 1) scale(.95)" fill="none" stroke="#11121a" stroke-width="3"/>
 </svg>

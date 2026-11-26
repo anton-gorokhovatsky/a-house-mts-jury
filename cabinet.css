@@ -160,14 +160,14 @@ body:has(.sign-in-page) { container: jury-login / inline-size; }
   block-size: var(--mark-size);
   margin-inline-start: auto;
   border: 2px solid #11121a;
-  border-radius: 16%;
+  --control-corner: calc(var(--mark-size) * .35);
   color: white;
 }
-.work-mark.is-scored { background: #11121a; }
+.work-mark.is-scored { border-color: #161722; background: #161722; }
 .work-mark svg { display: block; inline-size: 100%; block-size: 100%; }
 @media (forced-colors: active) {
   .work-mark { border-color: CanvasText; }
-  .work-mark.is-scored { background: CanvasText; color: Canvas; forced-color-adjust: none; }
+  .work-mark.is-scored { border-color: CanvasText; background: CanvasText; color: Canvas; forced-color-adjust: none; }
 }
 .ballot { margin-top: clamp(2rem, 5vw, 4rem); max-width: 45rem; font-synthesis-weight: none; }
 .ballot, .ballot legend { overflow-wrap: anywhere; }
@@ -282,7 +282,7 @@ criterion-title .whole-word { white-space: nowrap; }
 .nominations h4 { font-family: inherit; }
 
 /* The curve meets each straight edge with zero curvature. */
-:is(.login-card, .login-card input, .ballot textarea, .primary, .masthead button, .secondary, .score-choice span, .sheet-tool, .sheet-arrow) {
+:is(.login-card, .login-card input, .ballot textarea, .primary, .masthead button, .secondary, .score-choice span, .sheet-tool, .sheet-arrow, .work-mark) {
   --corner-extent: var(--control-corner);
   /* Native fields remain readable while the optional SVG is loading. */
   border-image: var(--corner-frame, none) 17 fill / var(--corner-extent);
@@ -300,6 +300,8 @@ form.login-card { --corner-extent: clamp(1.5rem, 2.35vw, 2rem); }
     .login-card input, .ballot textarea { --corner-frame: url('./control-corners.svg#field'); }
     .primary { --corner-frame: url('./control-corners.svg#primary'); }
     .masthead button { --corner-frame: url('./control-corners.svg#outline'); }
+    .work-mark { --corner-frame: url('./control-corners.svg?v=3#work-mark'); }
+    .work-mark.is-scored { --corner-frame: url('./control-corners.svg#primary'); background: transparent; }
     .sheet-tool, .sheet-arrow { --corner-frame: url('./control-corners.svg?v=2#sheet'); }
     .secondary, .score-choice span { --corner-frame: url('./control-corners.svg#choice'); }
     .score-choice input:checked + span { --corner-frame: url('./control-corners.svg#selected'); }
