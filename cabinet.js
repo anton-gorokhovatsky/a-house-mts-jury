@@ -1,6 +1,8 @@
-import { backend } from './config.js?v=c775bd483730';
-import { cabinetMarkup, displayText, catalogueContent, headerContent, signInContent, workContent } from './views.js?v=c775bd483730';
-import { FinalVoting } from './voting.js?v=c775bd483730';
+import { backend } from './config.js?v=454ecd2efb3b';
+import { cabinetMarkup, displayText, catalogueContent, headerContent, signInContent, workContent } from './views.js?v=454ecd2efb3b';
+import { FinalVoting } from './voting.js?v=454ecd2efb3b';
+import { FinalGallery } from './gallery.js?v=454ecd2efb3b';
+import { rankingContent } from './ranking.js?v=454ecd2efb3b';
 
 const cabinet = document.querySelector('#cabinet');
 const formOptions = { logo: './logo.svg', method: 'dialog', action: '#' };
@@ -11,6 +13,8 @@ let works = [];
 let pendingPdf;
 let cachedPdf;
 let voting;
+let gallery;
+let closeGallery;
 const loginKey = 'jury.login.v1';
 const sessionKey = 'jury.session.v1/' + backend.origin;
 const validUserId = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
@@ -27,9 +31,10 @@ function readSession() {
   return null;
 }
 
-function request(route, { method = 'GET', token, body, signal = AbortSignal.timeout(12000) } = {}) {
+function request(route, { method = 'GET', token, body, range, signal = AbortSignal.timeout(12000) } = {}) {
   const headers = { apikey: backend.publishableKey };
   if (token) headers.authorization = 'Bearer ' + token;
+  if (range) headers.range = range;
   if (body) headers['content-type'] = 'application/json';
   return fetch(backend.origin + route, {
     method, headers, signal, credentials: 'omit', cache: 'no-store', redirect: 'error',
@@ -155,7 +160,7 @@ async function openCabinet() {
   const epoch = sessionEpoch;
   sessionNotice('Открываем кабинет…', false);
   const sheet = new FinalVoting((rpc, body) => authorizedRequest('/rest/v1/rpc/' + rpc, { method: 'POST', body }), () => {
-    if (voting === sheet && cabinet.querySelector('.works')) showCatalogue();
+    if (voting === sheet && (cabinet.querySelector('.works') || location.hash.startsWith('#rating') && !cabinet.querySelector('#voting'))) showCatalogue();
   }, session.userId);
   try {
     const [result] = await Promise.all([
@@ -174,6 +179,7 @@ async function openCabinet() {
     }
     works = items;
     voting = sheet;
+    gallery = new FinalGallery(authorizedRequest);
     showCatalogue();
   } catch {
     if (epoch === sessionEpoch) sessionNotice('Не удалось загрузить кабинет. Можно повторить попытку.', true);
@@ -201,27 +207,82 @@ function forgetPdf() {
   cachedPdf = null;
 }
 
+let rulesLookup;
+
+function linkRegulations() {
+  const folder = voting?.data?.regulations_url;
+  if (typeof folder !== 'string' || !/^https:\/\/disk\.360\.yandex\.ru\/d\/[\w-]+$/.test(folder)) return;
+  if (rulesLookup?.folder !== folder) {
+    const api = new URL('https://cloud-api.yandex.net/v1/disk/public/resources');
+    api.searchParams.set('public_key', folder);
+    api.searchParams.set('fields', '_embedded.items.name,_embedded.items.mime_type,_embedded.items.public_url');
+    const file = fetch(api, { credentials: 'omit', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(6000) })
+      .then(async response => response.ok ? (await response.json())._embedded?.items : null)
+      .then(items => items?.find(item => item.name === 'Положение_о_работе_Жюри_Меняя_привычное.pdf' &&
+        item.mime_type === 'application/pdf')?.public_url)
+      .catch(() => null);
+    rulesLookup = { folder, file };
+  }
+  const current = rulesLookup;
+  current.file.then(url => {
+    if (rulesLookup !== current) return;
+    if (typeof url !== 'string' || !/^https:\/\/(?:yadi\.sk|disk\.(?:360\.)?yandex\.ru)\/i\/[\w-]+$/.test(url)) return;
+    for (const link of cabinet.querySelectorAll('a[data-regulations]')) if (link.href === folder) link.href = url;
+  });
+}
+
 function showCatalogue() {
   cancelDownload();
+  closeGallery?.();
+  closeGallery = null;
   if (!session || !works.length) return;
-  const [, kind, id] = /^#(work|list)\/([a-f0-9]{24})$/.exec(location.hash) ?? [];
-  const work = kind === 'work' ? works.find(item => item.id === id) : null;
-  if (work && cachedPdf && cachedPdf.id !== work.id) forgetPdf();
-  const content = work ? workContent(work, {
-    catalogueHref: '#list/' + work.id,
-    pdfControl: '<button type="button" class="primary" id="open-pdf">Открыть PDF</button>',
-    votingContent: '<section class="ballot" id="voting" aria-label="Оценка работы"></section>'
-  }) : catalogueContent(works, workId => '#work/' + workId, voting?.scored);
-  cabinet.innerHTML = headerContent(formOptions) + content;
-  document.title = (work?.title ?? 'Работы финалистов') + ' · Меняя привычное';
+  const [route, query = ''] = location.hash.slice(1).split('?');
+  const [area, part, detail] = route.split('/');
+  const fromRanking = area === 'rating' && part === 'work';
+  const id = fromRanking ? detail : part;
+  const work = (area === 'work' || fromRanking) && works.find(item => item.id === id);
+  const ranked = area === 'rating' && !work;
+  const sort = new URLSearchParams(query).get('by');
+  const suffix = sort && voting.data?.criteria.some(c => c.key === sort) ? '?by=' + encodeURIComponent(sort) : '';
+  let content;
+  if (work) {
+    if (cachedPdf && cachedPdf.id !== work.id) forgetPdf();
+    content = workContent(work, {
+      catalogueHref: fromRanking ? '#rating/' + work.id + suffix : '#list/' + work.id,
+      returnLabel: fromRanking ? 'К моему рейтингу' : 'К списку работ',
+      galleryContent: '<section class="sheets" aria-labelledby="sheets-heading"></section>',
+      pdfControl: '<button type="button" class="primary" id="open-pdf">Открыть PDF</button>',
+      votingContent: '<section class="ballot" id="voting" aria-label="Оценка работы"></section>'
+    });
+  } else if (ranked) {
+    content = rankingContent(works, voting, sort);
+  } else {
+    content = catalogueContent(works, key => '#work/' + key, voting.scored, voting.data);
+    if (!voting.data) content = content.replace('</ul>', '</ul><p class="status">Не удалось загрузить регламент и ваши оценки.</p>' +
+      '<button type="button" class="secondary" data-retry>Повторить загрузку</button>');
+  }
+  const section = work ? 'work' : ranked ? 'rating' : 'works';
+  cabinet.innerHTML = headerContent({ ...formOptions, section, showRanking: voting.data?.role !== 'observer' }) + content;
+  document.title = (work?.title ?? (ranked ? 'Мой рейтинг работ' : 'Работы финалистов')) + ' · Меняя привычное';
   bindLogout();
-  const focus = (kind === 'list' && document.getElementById(id)) || cabinet.querySelector('main h1');
+  const focusId = area === 'list' ? id : ranked && workId.test(part || '') ? 'rank-' + part : null;
+  const focus = (focusId && document.getElementById(focusId)) || cabinet.querySelector('main h1');
   if (focus.tagName === 'H1') focus.tabIndex = -1;
   focus.focus();
+  const retry = cabinet.querySelector('[data-retry]');
+  if (retry) retry.onclick = openCabinet;
+  const order = cabinet.querySelector('#ranking-order');
+  if (order) order.onchange = () => {
+    history.replaceState(null, '', '#rating?by=' + encodeURIComponent(order.value));
+    showCatalogue();
+    cabinet.querySelector('#ranking-order')?.focus();
+  };
   if (work) {
     cabinet.querySelector('#open-pdf').addEventListener('click', event => openPdf(work, event.currentTarget));
-    voting?.mount(work.id, cabinet.querySelector('#voting'));
+    closeGallery = gallery.mount(cabinet.querySelector('.sheets'), work);
+    voting.mount(work.id, cabinet.querySelector('#voting'));
   }
+  linkRegulations();
 }
 
 function resetSession(revoke) {
@@ -231,6 +292,10 @@ function resetSession(revoke) {
   session = null;
   works = [];
   voting = null;
+  closeGallery?.();
+  closeGallery = null;
+  gallery = null;
+  rulesLookup = null;
   cancelDownload();
   forgetPdf();
   if (revoke && token) request('/auth/v1/logout?scope=local', { method: 'POST', token }).catch(() => {});

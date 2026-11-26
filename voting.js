@@ -1,8 +1,8 @@
-import { cabinetMarkup, displayText, escape } from './views.js?v=c775bd483730';
+import { cabinetMarkup, displayText, escape, heading, regulationsDocument } from './views.js?v=454ecd2efb3b';
 import {
   approachesIntro, approachRules, conceptHeading, conceptIntro, conceptQuestions, conceptScale, conceptScaleIntro,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalNotes
-} from './criteria.js?v=c775bd483730';
+} from './criteria.js?v=454ecd2efb3b';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -25,7 +25,7 @@ const conceptGuide = disclosure('Что учитывать при оценке �
   '<ul class="guide-list">' + conceptQuestions.map(text => '<li>' + escape(text) + '</li>').join('') + '</ul>' +
   '<p>' + escape(approachesIntro) + ' <a href="' + approachRules + '" target="_blank" rel="noopener noreferrer">Пункт&nbsp;6.1 правил конкурса</a></p>');
 const nominationsGuide = disclosure(nominationsTitle,
-  nominations.map(item => '<section><h3>' + escape(item.name) + '</h3>' + paragraphs(item.paragraphs) + '</section>').join('') +
+  nominations.map(item => '<section>' + heading(item.name, 3) + paragraphs(item.paragraphs) + '</section>').join('') +
   '<section><h4>' + escape(distinctionHeading) + '</h4>' + paragraphs([distinction]) + '</section>', 'nominations');
 
 function weightTable(criteria) {
@@ -150,7 +150,7 @@ function field(criterion, answers, standardScale, updated, regulationsUrl) {
   const specialScale = feasibility
     ? scaleDetails('Шкала реализуемости', feasibilityScale, {
       intro: feasibilityNote, notes: feasibilityDetails,
-      source: regulationsUrl ? '<a href="' + escape(regulationsUrl) +
+      source: regulationsUrl ? '<a data-regulations href="' + escape(regulationsUrl) +
         '" target="_blank" rel="noopener noreferrer">Положение о работе жюри, п. 7.4</a>' : ''
     })
     : criterion.key === 'concept' ? conceptGuide : '';
@@ -282,17 +282,16 @@ export class FinalVoting {
     const updated = this.data.rubric === finalRubric;
     const standardScale = updated ? conceptScale : generalScale;
     const message = draft.message ?? (saved ? 'Оценка сохранена.' : '');
-    const rules = this.data.regulations_url;
-    const validRules = typeof rules === 'string' && /^https:\/\/disk\.360\.yandex\.ru\/d\/[\w-]+$/.test(rules);
-    const rulesLink = validRules
-      ? '<a class="ballot-rules" href="' + escape(rules) + '" target="_blank" rel="noopener noreferrer">Положение о работе жюри</a>' : '';
-    region.innerHTML = cabinetMarkup('<h2>Ваша оценка</h2>' +
+    const rules = regulationsDocument(this.data.regulations_url);
+    const rulesLink = rules
+      ? '<a class="ballot-rules" data-regulations href="' + escape(rules) + '" target="_blank" rel="noopener noreferrer">Положение о работе жюри</a>' : '';
+    region.innerHTML = cabinetMarkup(heading('Ваша оценка', 2) +
       (closed ? '<p class="ballot-note">Голосование закрыто.</p>' : '') +
       (updated ? weightTable(this.data.criteria) : '') +
       scaleDetails(updated ? 'Шкала оценки концепции' : 'Как выставлять баллы', standardScale, { intro: updated ? conceptScaleIntro : '', descending: updated }) +
       (updated ? '' : rulesLink) +
       '<form><fieldset class="ballot-fields"' + (closed || draft.saving ? ' disabled' : '') + '><legend class="sr-only">Оценочный лист</legend>' +
-      this.data.criteria.map(c => field(c, draft.answers, standardScale, updated, validRules ? rules : null)).join('') +
+      this.data.criteria.map(c => field(c, draft.answers, standardScale, updated, rules)).join('') +
       '<label class="comment-label" for="ballot-comment">Комментарий <small>по желанию</small></label>' +
       '<textarea id="ballot-comment" name="comment" rows="3" maxlength="5000">\n' + escape(draft.comment) + '</textarea></fieldset>' +
       (closed ? '' : '<button class="primary save-ballot" type="submit"' + (draft.saving || draft.conflict ? ' disabled' : '') + '>' +

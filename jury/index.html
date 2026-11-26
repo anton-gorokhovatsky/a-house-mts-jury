@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self' https://static.tildacdn.com; img-src 'self'; connect-src https://qlzszcunhphficvkezsk.supabase.co; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; font-src 'self' blob: https://static.tildacdn.com; img-src 'self' blob: data:; connect-src 'self' https://qlzszcunhphficvkezsk.supabase.co https://cloud-api.yandex.net; form-action 'none'; base-uri 'none'">
 <title>Вход для жюри · Меняя привычное</title>
 <link rel="preconnect" href="https://static.tildacdn.com" crossorigin>
-<link rel="stylesheet" href="../cabinet.css?v=c775bd483730">
-<link rel="modulepreload" href="../views.js?v=c775bd483730">
-<link rel="modulepreload" href="../config.js?v=c775bd483730">
-<link rel="modulepreload" href="../typography.js?v=c775bd483730">
-<link rel="modulepreload" href="../criteria.js?v=c775bd483730">
-<link rel="modulepreload" href="../voting.js?v=c775bd483730">
-<script type="module" src="../cabinet.js?v=c775bd483730"></script>
+<link rel="stylesheet" href="../cabinet.css?v=454ecd2efb3b">
+<link rel="modulepreload" href="../views.js?v=454ecd2efb3b">
+<link rel="modulepreload" href="../config.js?v=454ecd2efb3b">
+<link rel="modulepreload" href="../typography.js?v=454ecd2efb3b">
+<link rel="modulepreload" href="../criteria.js?v=454ecd2efb3b">
+<link rel="modulepreload" href="../voting.js?v=454ecd2efb3b">
+<script type="module" src="../cabinet.js?v=454ecd2efb3b"></script>
 </head>
 <body>
 <div id="cabinet">
@@ -28,7 +28,7 @@
   </section>
   <section class="login-section" aria-labelledby="sign-in">
     <form class="login-card" method="dialog" action="#">
-      <h2 id="sign-in">Вход <span class="word-group">для<wbr> жюри</span></h2>
+      <h2 id="sign-in" data-edges="stem tight">Вход <span class="word-group">для<wbr> жюри</span></h2>
       <input type="hidden" name="next" value="">
       <label for="login">Логин</label>
       <input id="login" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="254" value="">
