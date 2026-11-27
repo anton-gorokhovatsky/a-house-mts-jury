@@ -789,20 +789,13 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   grid-template-columns: minmax(0, var(--criterion-sidebar)) minmax(0, 1fr);
   column-gap: var(--criterion-column-gap);
 }
-.criterion-meta, .criterion-main { min-inline-size: 0; }
+.criterion-main { min-inline-size: 0; }
 .criterion-number {
   --stem-bearing: .06em;
+  align-self: start;
   display: block;
   font: 400 clamp(2.5rem, calc(120 * var(--archive-unit)), 7.5rem) / 1.1 var(--display-face);
 }
-.criterion-weight {
-  --stem-bearing: .075em;
-  margin-block-start: var(--ballot-field-gap);
-  color: #414859;
-  font-size: var(--ballot-meta-size);
-  line-height: 1.25;
-}
-.criterion-weight span { white-space: nowrap; }
 .criterion-main { padding-block-start: calc(17 * var(--archive-unit)); }
 .criterion-main h3 {
   margin: 0;
@@ -853,7 +846,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   max-inline-size: 45rem;
 }
 .recommendation-step { row-gap: var(--ballot-field-gap); }
-.recommendation-step .criterion-number { grid-column: 1; grid-row: 1 / span 2; align-self: start; }
+.recommendation-step .criterion-number { grid-column: 1; grid-row: 1 / span 2; }
 .recommendation-step > :where(h3, .recommendations) { grid-column: 2; max-inline-size: 45rem; }
 .recommendation-step h3 { margin: 0; padding-block-start: calc(17 * var(--archive-unit)); }
 .ballot-final .comment-label { margin-block-end: var(--ballot-field-gap); line-height: 1.25; }
@@ -907,8 +900,6 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 }
 @container (max-width: 19rem) {
   .criterion-layout { grid-template-columns: minmax(0, 1fr); row-gap: 1.25rem; }
-  .criterion-meta { display: flex; align-items: center; gap: 1.25rem; }
-  .criterion-weight { margin-block-start: 0; }
 }
 
 .rating-scene .content { padding-block: calc(55.73572 * var(--archive-unit)) calc(90 * var(--archive-unit)); }

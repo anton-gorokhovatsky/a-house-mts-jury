@@ -1,8 +1,8 @@
-import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=de2efe7a27ad';
+import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=870e8ae90c13';
 import {
   approachesIntro, approachRules, conceptIntro, conceptQuestions, conceptScale, conceptTitle,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalScope, technicalTitle
-} from './criteria.js?v=de2efe7a27ad';
+} from './criteria.js?v=870e8ae90c13';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -21,7 +21,7 @@ function disclosure(title, content, className = '') {
 }
 
 const paragraphs = lines => lines.map(line => '<p>' + escape(line) + '</p>').join('');
-const conceptGuide = disclosure('Подробнее о критерии', paragraphs([criterionTitles.concept, conceptIntro]) +
+const conceptGuide = weightNote => disclosure('Подробнее о критерии', paragraphs([weightNote, criterionTitles.concept, conceptIntro]) +
   '<ul class="guide-list">' + conceptQuestions.map(text => '<li>' + escape(text) + '</li>').join('') + '</ul>' +
   '<p>' + escape(approachesIntro) + ' <a href="' + approachRules + '" target="_blank" rel="noopener noreferrer">Пункт&nbsp;6.1 правил конкурса</a></p>');
 const nominationsGuide = nominations.map(item => '<section>' + heading(item.name, 3) + paragraphs(item.paragraphs) + '</section>').join('') +
@@ -55,8 +55,8 @@ function scaleValues(scale, { notes, name } = {}) {
   return '<ul class="scale-values" role="list"' + (name ? ' aria-label="' + escape(name) + '"' : '') + '>' + rows.join('') + '</ul>';
 }
 
-function scaleDetails(title, scale, { intro = '', notes, source = '' } = {}) {
-  return disclosure(title, (intro ? paragraphs([intro]) : '') + scaleValues(scale, { notes }) + source);
+function scaleDetails(title, scale, { intro = [], notes, source = '' } = {}) {
+  return disclosure(title, paragraphs(intro) + scaleValues(scale, { notes }) + source);
 }
 
 const feasibilityNote = 'Критерий «реализуемость и конструктивная логика» является первичным. Невозможность реализации Конкурсной Работы является блокирующим фактором для признания ее автора Победителем Конкурса независимо от оценок по иным критериям. Критерий оценивает член Жюри – представитель технического блока Партнера Конкурса по следующей шкале. Работа, средняя оценка которой по данному критерию (пункт 7.6 настоящего Положения) составляет менее 4 (четырех) баллов, не может занять призовое место и быть рекомендована к реализации; работа со средней оценкой менее 2 (двух) баллов также не рекомендуется к участию в выставке:';
@@ -163,30 +163,30 @@ function field(criterion, position, answers, standardScale, updated, regulations
   const site = criterion.site_only ? '<label class="no-site"><input type="radio" name="' + key +
     '" value="na"' + (selected === null ? ' checked' : '') + '> Место размещения не определено</label>' : '';
   const help = descriptions[criterion.key];
+  const weight = criterion.weight + ' %';
+  const weightNote = 'Вес критерия в итоговой оценке — ' + weight + '.';
   const specialScale = feasibility
     ? scaleDetails(technical ? 'Подробнее о критерии' : 'Шкала реализуемости', scale, {
-      intro: technical ? 'Комплексный, расширенный критерий. ' + feasibilityNote : feasibilityNote,
+      intro: technical ? [weightNote, 'Комплексный, расширенный критерий. ' + feasibilityNote] : [feasibilityNote],
       notes: feasibilityDetails,
       source: regulationsUrl ? '<a data-regulations href="' + escape(regulationsUrl) +
         '" target="_blank" rel="noopener noreferrer">Положение о работе жюри, п. 7.4</a>' : ''
     })
-    : criterion.key === 'concept' ? conceptGuide : '';
+    : criterion.key === 'concept' ? conceptGuide(weightNote) : '';
   const controls = '<div class="score-choices">' + choices + '</div>' + site;
-  const weight = escape(criterion.weight) + ' %';
   if (updated) {
     const number = String(position).padStart(2, '0');
     const title = technical ? technicalTitle : criterion.key === 'concept' ? conceptTitle : criterion.label;
     const headingId = 'criterion-' + key;
     return '<fieldset class="criterion criterion-final" aria-labelledby="' + headingId + '"><div class="criterion-layout">' +
-      '<div class="criterion-meta"><span class="criterion-number" data-edges aria-hidden="true">' + escape(number) + '</span>' +
-      '<p class="criterion-weight" data-edges>Вес <span>' + weight + '</span></p></div>' +
+      '<span class="criterion-number" data-edges aria-hidden="true">' + escape(number) + '</span>' +
       '<div class="criterion-main"><h3 id="' + headingId + '"><criterion-title>' + escape(title) + '</criterion-title></h3>' +
       (technical ? '<p class="criterion-scope">' + escape(technicalScope) + '</p>' : '') + specialScale + controls +
       '<div class="score-scale">' + scaleValues(scale, { name: feasibility ? 'Шкала реализуемости' : 'Шкала оценки концепции' }) +
       '</div></div></div></fieldset>';
   }
   return '<fieldset class="criterion"><legend><criterion-title>' + escape(criterion.label) + '</criterion-title>' +
-    ' <small>Вес ' + weight + '</small></legend>' +
+    ' <small>Вес ' + escape(weight) + '</small></legend>' +
     (help ? '<p class="criterion-help">' + escape(help) + '</p>' : '') + specialScale + controls + '</fieldset>';
 }
 
