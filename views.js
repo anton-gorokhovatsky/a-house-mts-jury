@@ -1,4 +1,4 @@
-import { russianSpacing, typesetText } from './typography.js?v=81d02660f191';
+import { russianSpacing, typesetText } from './typography.js?v=5e38fda531a8';
 
 export const displayText = russianSpacing;
 export const cabinetMarkup = html => typesetText(html, { formatFormText: true });
@@ -165,12 +165,12 @@ export function workContent(work, {
 <main class="scene work-scene"><div class="work-gallery"><div class="wrap content">
   ` + heading(work.title) + `
   ` + galleryContent + `
-  <div class="materials">
+  <div class="materials"><div class="work-pdf-group">
     <` + pdfTag + pdfAttributes + ` class="primary work-pdf" aria-labelledby="work-pdf-label" aria-describedby="work-pdf-size">
       <span id="work-pdf-label">Открыть PDF</span>
-      <small id="work-pdf-size">` + megabytes + ` МБ</small>
     </` + pdfTag + `>
-  </div>
+    <small id="work-pdf-size">` + megabytes + ` МБ</small>
+  </div></div>
   <a class="return work-return" href="` + catalogueHref + `">` + escape(returnLabel) + `</a>
 </div></div>
 <div class="work-ballot"><div class="wrap content">

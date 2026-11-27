@@ -5,7 +5,7 @@ export const criterionTitles = {
 };
 export const technicalTitle = "Реализуемость, эффективность, конструктивная логика";
 export const technicalScope = "Соответствие техническим требованиям объекта";
-export const conceptHeading = "1. Сила и потенциал концепции, идеи и заложенных смыслов, художественного и эмоционального эффекта арт-объекта и визуального воплощения заложенных смыслов";
+export const conceptTitle = "Сила и потенциал концепции, идеи и заложенных смыслов";
 export const conceptIntro = "Оценка задуманной концепции и её описания:";
 export const conceptQuestions = [
   "Каковы обоснование и аргументация выбора концепции? В чём её концептуальная новизна?",
@@ -18,7 +18,6 @@ export const conceptQuestions = [
 export const approachesIntro = "Концепция должна соответствовать одному из двух подходов интеграции объекта в пространство:";
 // The document refers to the two approaches. Their definitions are in section 6.1 of the contest rules.
 export const approachRules = 'https://disk.360.yandex.ru/d/kAckYUQ5My6vfg';
-export const conceptScaleIntro = "Данный критерий можно оценить по шкале от 0 до 5 баллов, где:";
 export const conceptScale = [
   "отсутствует",
   "плохо / не соответствует",

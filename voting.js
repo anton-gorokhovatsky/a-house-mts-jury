@@ -1,8 +1,8 @@
-import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=81d02660f191';
+import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=5e38fda531a8';
 import {
-  approachesIntro, approachRules, conceptHeading, conceptIntro, conceptQuestions, conceptScale, conceptScaleIntro,
+  approachesIntro, approachRules, conceptIntro, conceptQuestions, conceptScale, conceptTitle,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalScope, technicalTitle
-} from './criteria.js?v=81d02660f191';
+} from './criteria.js?v=5e38fda531a8';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -21,7 +21,7 @@ function disclosure(title, content, className = '') {
 }
 
 const paragraphs = lines => lines.map(line => '<p>' + escape(line) + '</p>').join('');
-const conceptGuide = disclosure('Что учитывать при оценке концепции', paragraphs([conceptHeading, conceptIntro]) +
+const conceptGuide = disclosure('Подробнее о критерии', paragraphs([criterionTitles.concept, conceptIntro]) +
   '<ul class="guide-list">' + conceptQuestions.map(text => '<li>' + escape(text) + '</li>').join('') + '</ul>' +
   '<p>' + escape(approachesIntro) + ' <a href="' + approachRules + '" target="_blank" rel="noopener noreferrer">Пункт&nbsp;6.1 правил конкурса</a></p>');
 const nominationsGuide = disclosure(nominationsTitle,
@@ -41,12 +41,14 @@ function recommendationFields(selected) {
     nominationsGuide + choices + '</fieldset>';
 }
 
-function scaleDetails(title, scale, { intro = '', descending = false, notes, source = '' } = {}) {
+function scaleValues(scale, { notes, name } = {}) {
   const rows = scale.map((meaning, i) =>
     '<li><span class="scale-number">' + i + '</span> <span aria-hidden="true">–</span> <span>' + escape(meaning) + (notes ? '<span class="scale-explanation">' + escape(notes[i]) + '</span>' : '') + '</span></li>');
-  if (descending) rows.reverse();
-  return disclosure(title, (intro ? paragraphs([intro]) : '') + '<ul class="scale-values">' + rows.join('') + '</ul>' +
-    source);
+  return '<ul class="scale-values" role="list"' + (name ? ' aria-label="' + escape(name) + '"' : '') + '>' + rows.join('') + '</ul>';
+}
+
+function scaleDetails(title, scale, { intro = '', notes, source = '' } = {}) {
+  return disclosure(title, (intro ? paragraphs([intro]) : '') + scaleValues(scale, { notes }) + source);
 }
 
 const feasibilityNote = 'Критерий «реализуемость и конструктивная логика» является первичным. Невозможность реализации Конкурсной Работы является блокирующим фактором для признания ее автора Победителем Конкурса независимо от оценок по иным критериям. Критерий оценивает член Жюри – представитель технического блока Партнера Конкурса по следующей шкале. Работа, средняя оценка которой по данному критерию (пункт 7.6 настоящего Положения) составляет менее 4 (четырех) баллов, не может занять призовое место и быть рекомендована к реализации; работа со средней оценкой менее 2 (двух) баллов также не рекомендуется к участию в выставке:';
@@ -72,13 +74,15 @@ const criterionSyllables = new Map([
 
 class CriterionTitle extends HTMLElement {
   #copy;
+  #measureBox;
   #lastMeasure;
   #ruler = document.createElement('canvas').getContext('2d');
   #observer = new ResizeObserver(() => this.#fit());
 
   connectedCallback() {
     this.#copy ??= this.textContent;
-    this.#observer.observe(this.closest('fieldset'));
+    this.#measureBox = this.closest('h3') ?? this.closest('fieldset');
+    this.#observer.observe(this.#measureBox);
     this.#fit();
     document.fonts.ready.then(() => this.#fit());
   }
@@ -89,7 +93,7 @@ class CriterionTitle extends HTMLElement {
 
   #fit() {
     if (!this.isConnected) return;
-    const width = this.closest('fieldset').clientWidth;
+    const width = this.#measureBox.clientWidth;
     const style = getComputedStyle(this);
     this.#ruler.font = style.fontWeight + ' ' + style.fontSize + ' ' + style.fontFamily;
     const measure = text => this.#ruler.measureText(text).width;
@@ -143,7 +147,8 @@ function field(criterion, answers, standardScale, updated, regulationsUrl) {
   const selected = answers[criterion.key];
   const feasibility = criterion.key === 'feasibility' || criterion.key === 'technical_review';
   const technical = updated && criterion.key === 'technical_review';
-  const choices = (feasibility ? feasibilityScale : standardScale).map((meaning, i) =>
+  const scale = feasibility ? feasibilityScale : standardScale;
+  const choices = scale.map((meaning, i) =>
     '<label class="score-choice"><input type="radio" name="' + key + '" value="' + i +
     '" aria-label="' + i + ' — ' + escape(meaning) + '" required' + (selected === i ? ' checked' : '') +
     '><span>' + i + '</span></label>').join('');
@@ -151,21 +156,30 @@ function field(criterion, answers, standardScale, updated, regulationsUrl) {
     '" value="na"' + (selected === null ? ' checked' : '') + '> Место размещения не определено</label>' : '';
   const help = descriptions[criterion.key];
   const specialScale = feasibility
-    ? scaleDetails('Шкала реализуемости', feasibilityScale, {
+    ? scaleDetails(technical ? 'Подробнее о критерии' : 'Шкала реализуемости', scale, {
       intro: technical ? 'Комплексный, расширенный критерий. ' + feasibilityNote : feasibilityNote,
       notes: feasibilityDetails,
       source: regulationsUrl ? '<a data-regulations href="' + escape(regulationsUrl) +
         '" target="_blank" rel="noopener noreferrer">Положение о работе жюри, п. 7.4</a>' : ''
     })
-    : criterion.key === 'concept' ? scaleDetails('Шкала оценки концепции', conceptScale, {
-      intro: conceptScaleIntro, descending: true
-    }) + conceptGuide : '';
-  const title = technical ? technicalTitle : (updated && criterionTitles[criterion.key]) || criterion.label;
-  return '<fieldset class="criterion"><legend><criterion-title>' + escape(title) + '</criterion-title>' +
-    (technical ? ' <span class="criterion-scope">' + escape(technicalScope) + '</span>' : '') +
-    ' <small>Вес ' + criterion.weight + ' %</small></legend>' +
-    (help ? '<p class="criterion-help">' + escape(help) + '</p>' : '') + specialScale +
-    '<div class="score-choices">' + choices + '</div>' + site + '</fieldset>';
+    : criterion.key === 'concept' ? conceptGuide : '';
+  const controls = '<div class="score-choices">' + choices + '</div>' + site;
+  const weight = escape(criterion.weight) + ' %';
+  if (updated) {
+    const number = String(criterion.position).padStart(2, '0');
+    const title = technical ? technicalTitle : criterion.key === 'concept' ? conceptTitle : criterion.label;
+    const headingId = 'criterion-' + key;
+    return '<fieldset class="criterion criterion-final" aria-labelledby="' + headingId + '"><div class="criterion-layout">' +
+      '<div class="criterion-meta"><span class="criterion-number" aria-hidden="true">' + escape(number) + '</span>' +
+      '<p class="criterion-weight">Вес критерия <span>' + weight + '</span></p></div>' +
+      '<div class="criterion-main"><h3 id="' + headingId + '"><criterion-title>' + escape(title) + '</criterion-title></h3>' +
+      (technical ? '<p class="criterion-scope">' + escape(technicalScope) + '</p>' : '') + specialScale + controls +
+      '<div class="score-scale">' + scaleValues(scale, { name: feasibility ? 'Шкала реализуемости' : 'Шкала оценки концепции' }) +
+      '</div></div></div></fieldset>';
+  }
+  return '<fieldset class="criterion"><legend><criterion-title>' + escape(criterion.label) + '</criterion-title>' +
+    ' <small>Вес ' + weight + '</small></legend>' +
+    (help ? '<p class="criterion-help">' + escape(help) + '</p>' : '') + specialScale + controls + '</fieldset>';
 }
 
 const draftMessage = 'Черновик сохранён в этом браузере. Изменения ещё не отправлены.';
@@ -303,25 +317,26 @@ export class FinalVoting {
     }
     const closed = !this.data.accepting;
     const updated = this.data.rubric === finalRubric;
+    region.classList.toggle('ballot-final', updated);
     const standardScale = updated ? conceptScale : generalScale;
     const message = draft.message ?? (saved ? 'Оценка сохранена.' : '');
     const rules = this.regulationsUrl;
     const rulesLink = rules
       ? '<a class="ballot-rules" data-regulations href="' + escape(rules) + '" target="_blank" rel="noopener noreferrer">Положение о работе жюри</a>' : '';
-    region.innerHTML = cabinetMarkup(heading('Ваша оценка', 2) +
+    region.innerHTML = cabinetMarkup(heading(updated ? 'Оценка работы' : 'Ваша оценка', 2) +
       (closed ? '<p class="ballot-note">Голосование закрыто.</p>' : '') +
       (updated ? '' : scaleDetails('Как выставлять баллы', standardScale)) +
       (updated ? '' : rulesLink) +
       '<form><fieldset class="ballot-fields"' + (closed || draft.saving ? ' disabled' : '') + '><legend class="sr-only">Оценочный лист</legend>' +
       this.data.criteria.map(c => field(c, draft.answers, standardScale, updated, rules)).join('') +
-      '<label class="comment-label" for="ballot-comment">Комментарий <small>по желанию</small></label>' +
+      '<div class="ballot-follow-up"><label class="comment-label" for="ballot-comment">Комментарий <small>по желанию</small></label>' +
       '<textarea id="ballot-comment" name="comment" rows="3" maxlength="5000">\n' + escape(draft.comment) + '</textarea>' +
-      (canRecommend ? recommendationFields(draft.nomination_keys) : '') + '</fieldset>' +
+      (canRecommend ? recommendationFields(draft.nomination_keys) : '') + '</div></fieldset><div class="ballot-actions">' +
       (closed ? '' : '<button class="primary save-ballot" type="submit"' + (draft.saving || draft.conflict ? ' disabled' : '') + '>' +
         (draft.saving ? 'Сохраняем…' : saved ? 'Сохранить изменения' : 'Сохранить оценку') + '</button>') +
       '<p class="ballot-feedback" role="status" aria-live="polite"></p>' +
       (draft.conflict ? '<button type="button" class="secondary" data-reload>' +
-        (draft.rubricChanged ? 'Открыть действующий лист' : 'Загрузить сохранённую версию') + '</button>' : '') + '</form>' +
+        (draft.rubricChanged ? 'Открыть действующий лист' : 'Загрузить сохранённую версию') + '</button>' : '') + '</div></form>' +
       (updated ? (canRecommend ? '' : nominationsGuide) + rulesLink : ''));
     const form = region.querySelector('form');
     const feedback = form.querySelector('[role="status"]');

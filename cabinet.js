@@ -1,8 +1,8 @@
-import { backend } from './config.js?v=81d02660f191';
-import { cabinetMarkup, displayText, catalogueContent, headerContent, projectsId, signInContent, workContent } from './views.js?v=81d02660f191';
-import { FinalVoting } from './voting.js?v=81d02660f191';
-import { FinalGallery } from './gallery.js?v=81d02660f191';
-import { rankingContent } from './ranking.js?v=81d02660f191';
+import { backend } from './config.js?v=5e38fda531a8';
+import { cabinetMarkup, displayText, catalogueContent, headerContent, projectsId, signInContent, workContent } from './views.js?v=5e38fda531a8';
+import { FinalVoting } from './voting.js?v=5e38fda531a8';
+import { FinalGallery } from './gallery.js?v=5e38fda531a8';
+import { rankingContent } from './ranking.js?v=5e38fda531a8';
 
 const cabinet = document.querySelector('#cabinet');
 const formOptions = { logo: './logo.svg', method: 'dialog', action: '#' };
@@ -239,7 +239,13 @@ async function loadRegulations(source) {
 
 const finalistBrief = {"id":"brief-final-1c7ed76d7623","bytes":6324656};
 
-function showCatalogue() {
+function scrollToProjects(projects, animate = false) {
+  const smooth = animate && matchMedia('(prefers-reduced-motion: no-preference)').matches;
+  projects.focus({ preventScroll: true });
+  projects.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
+}
+
+function showCatalogue({ animateProjects = false } = {}) {
   cancelDownload();
   closeGallery?.();
   closeGallery = null;
@@ -275,10 +281,13 @@ function showCatalogue() {
   bindLogout();
   const focusId = area === 'list' ? id : ranked && workId.test(part || '') ? 'rank-' + part : null;
   const projects = route === projectsId || route === 'works' ? document.getElementById(projectsId) : null;
-  const focus = (focusId && document.getElementById(focusId)) || projects || cabinet.querySelector('main h1');
-  if (focus.tagName === 'H1') focus.tabIndex = -1;
-  focus.focus({ preventScroll: Boolean(projects) });
-  if (projects) projects.scrollIntoView({ block: 'start' });
+  if (projects) {
+    scrollToProjects(projects, animateProjects);
+  } else {
+    const focus = (focusId && document.getElementById(focusId)) || cabinet.querySelector('main h1');
+    if (focus.tagName === 'H1') focus.tabIndex = -1;
+    focus.focus();
+  }
   const retry = cabinet.querySelector('[data-retry]');
   if (retry) retry.onclick = openCabinet;
   const brief = cabinet.querySelector('[data-brief]');
@@ -379,6 +388,18 @@ async function openPdf(work, button) {
     }
   }
 }
+
+cabinet.addEventListener('click', event => {
+  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  const link = event.target.closest?.('a');
+  const hash = '#' + projectsId;
+  if (link?.getAttribute('href') !== hash) return;
+  event.preventDefault();
+  if (location.hash !== hash) history.pushState(null, '', hash);
+  const projects = document.getElementById(projectsId);
+  if (projects) scrollToProjects(projects, true);
+  else showCatalogue({ animateProjects: true });
+});
 
 window.addEventListener('hashchange', showCatalogue);
 session = readSession();
