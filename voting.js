@@ -1,8 +1,8 @@
-import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=5e38fda531a8';
+import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=b5ea51b86604';
 import {
   approachesIntro, approachRules, conceptIntro, conceptQuestions, conceptScale, conceptTitle,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalScope, technicalTitle
-} from './criteria.js?v=5e38fda531a8';
+} from './criteria.js?v=b5ea51b86604';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -164,7 +164,7 @@ function field(criterion, answers, standardScale, updated, regulationsUrl) {
     })
     : criterion.key === 'concept' ? conceptGuide : '';
   const controls = '<div class="score-choices">' + choices + '</div>' + site;
-  const weight = escape(criterion.weight) + ' %';
+  const weight = escape(criterion.weight) + ' %';
   if (updated) {
     const number = String(criterion.position).padStart(2, '0');
     const title = technical ? technicalTitle : criterion.key === 'concept' ? conceptTitle : criterion.label;

@@ -308,7 +308,7 @@ criterion-title .whole-word { white-space: nowrap; }
 .recommendations { min-inline-size: 0; margin: 1.75rem 0 0; padding: 0; border: 0; }
 .recommendations legend { padding: 0; font-size: 1.25em; }
 .recommendations legend small { color: #414859; }
-.recommendations .nominations { margin-block: .35rem .65rem; }
+.recommendations .nominations { margin-block: .5rem .75rem; }
 .nomination-option {
   display: flex;
   align-items: center;
@@ -322,15 +322,22 @@ criterion-title .whole-word { white-space: nowrap; }
 .nomination-option input:not(:checked) + .work-mark svg { visibility: hidden; }
 .nomination-option input:focus-visible + .work-mark { outline: .18rem solid #315cc0; outline-offset: .15rem; }
 .nomination-option:has(input:disabled) { cursor: default; }
-.nominations section + section { margin-block-start: 1.65em; }
+.nominations { --nomination-text-gap: .5rem; }
+.nominations > summary { border-radius: var(--control-corner); }
+.ballot .nominations[open] { margin-block-end: var(--work-group-gap); }
+.nominations .scale-body {
+  max-inline-size: 60ch;
+  margin-block-start: calc(2 * var(--nomination-text-gap));
+  margin-inline-start: 1em;
+}
+.nominations section + section { margin-block-start: var(--work-group-gap); }
 .nominations h3, .nominations h4 {
-  margin: 0 0 .3em;
-  font: 400 clamp(1.05rem, .96rem + .45vw, 1.3rem) / 1.2 var(--display-face);
-  text-wrap: balance;
+  margin: 0 0 var(--nomination-text-gap);
+  font: 400 clamp(1.1875rem, 1.08rem + .35vw, 1.375rem) / 1.25 var(--body-face);
+  text-wrap: pretty;
 }
 .nominations p { margin: 0; }
-.nominations p + p { margin-top: .35em; }
-.nominations h4 { font-family: inherit; }
+.nominations p + p { margin-block-start: var(--nomination-text-gap); }
 
 /* The curve meets each straight edge with zero curvature. */
 :is(.login-card, .login-card input, .ballot textarea, .ranking-select, .primary, .masthead button, .secondary, .score-choice span, .sheet-preview, .sheet-tool, .sheet-arrow, .work-mark) {
@@ -674,12 +681,16 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 .work-gallery .sheet-preview img { padding: clamp(10px, 1.6667vw, 24px); }
 .work-gallery .materials { margin-block-start: var(--work-group-gap); }
 .work-pdf-group {
-  display: inline-grid;
-  inline-size: min(100%, max(12.25rem, calc(344 * var(--archive-unit))));
-  gap: .45rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  max-inline-size: 100%;
+  gap: .5rem clamp(.875rem, 1.6vw, 1.5rem);
 }
 .work-gallery .work-pdf {
   --label-shift: .07em;
+  inline-size: max(12.25rem, calc(344 * var(--archive-unit)));
+  max-inline-size: 100%;
   min-block-size: max(3.5rem, calc(64 * var(--archive-unit)));
   font-size: max(1rem, calc(22 * var(--archive-unit)));
   line-height: 1.15;
@@ -687,9 +698,9 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 }
 .work-pdf-group small {
   color: #414859;
-  font-size: clamp(.875rem, 1.2vw, 1rem);
+  font-size: max(1rem, calc(22 * var(--archive-unit)));
   line-height: 1.25;
-  text-align: center;
+  white-space: nowrap;
 }
 .work-return { margin-block: .75rem 0; }
 .work-ballot { background: linear-gradient(180deg, #fff max(20%, calc(100% - 840px)), #dfe6f8 max(55%, calc(100% - 460px)), #929fc5); }
@@ -788,11 +799,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 .score-scale .scale-values { list-style: none; padding: 0; margin: 0; }
 .score-scale li { display: block; }
 .score-scale li + li { margin-block-start: 0; }
-.work-ballot .criterion-final {
-  border-block-end: 2px solid #161722;
-  padding-block-end: clamp(2rem, 4.2vw, 3.75rem);
-  margin-block-end: clamp(2rem, 4.2vw, 3.75rem);
-}
+.work-ballot .criterion-final { margin-block-end: var(--work-section-gap); }
 .ballot-final :is(.ballot-follow-up, .ballot-actions, .ballot-rules) { margin-inline-start: var(--ballot-inset); }
 .ballot-final .ballot-follow-up { max-inline-size: 45rem; }
 @media (max-width: 45em) {
