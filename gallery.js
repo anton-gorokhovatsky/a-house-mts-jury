@@ -1,5 +1,5 @@
-import { displayText, escape } from './views.js?v=2da02c5172f9';
-import { ProjectSheets } from './sheets.js?v=2da02c5172f9';
+import { displayText, escape } from './views.js?v=12cf3cc5a61e';
+import { ProjectSheets } from './sheets.js?v=12cf3cc5a61e';
 
 const retry = '<p class="sheet-status" role="status"></p><button type="button" class="sheet-tool" data-retry-sheet hidden>Повторить загрузку листа</button>';
 const failure = 'Не удалось загрузить лист. Вы можете повторить попытку или открыть PDF проекта.';

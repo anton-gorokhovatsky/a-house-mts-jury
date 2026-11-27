@@ -1,4 +1,4 @@
-import { russianSpacing, typesetText } from './typography.js?v=2da02c5172f9';
+import { russianSpacing, typesetText } from './typography.js?v=12cf3cc5a61e';
 
 export const displayText = russianSpacing;
 export const cabinetMarkup = html => typesetText(html, { formatFormText: true });
@@ -52,9 +52,11 @@ function page(title, content, signedIn = false) {
     navigation + content + '</body></html>';
 }
 
+export const projectsId = 'projects';
+
 export function headerContent({ logo = '/logo.svg', method = 'post', action = '/logout', section, showRanking = false } = {}) {
   const link = (href, name, current) => '<a href="' + href + '"' + (section === current ? ' aria-current="page"' : '') + '>' + name + '</a>';
-  const menu = section ? '<nav aria-label="Меню жюри">' + link('#works', 'Работы', 'works') +
+  const menu = section ? '<nav aria-label="Меню жюри">' + link('#' + projectsId, 'Работы', 'works') +
     (showRanking ? link('#rating', 'Мой рейтинг работ', 'rating') : '') + '</nav>' : '';
   return '<header class="masthead"><div class="wrap masthead-inner"><img src="' + logo +
     '" width="320" alt="МТС и A–House">' + menu + '<form method="' + method + '" action="' + action +
@@ -87,7 +89,7 @@ function welcomeContent(sheet, rulesUrl) {
     '<div class="intro"><div class="step"><div class="step-head"><span class="num" aria-hidden="true">01</span>' + rulesButton + '</div>' +
     (url ? '<p>Перед началом ознакомьтесь с подробным регламентом по оценке работ.</p>' : '<p>Регламент пока недоступен.</p>') +
     '</div><div class="step"><div class="step-head"><span class="num" aria-hidden="true">02</span>' +
-    '<div class="materials"><button type="button" class="primary rules-button" data-brief>Бриф для участников 3‑го этапа</button></div></div>' +
+    '<div class="materials"><button type="button" class="primary rules-button" data-brief>Бриф 3‑го этапа</button></div></div>' +
     instruction +
     '</div></div></div></section>';
 }
@@ -144,25 +146,30 @@ export function catalogueContent(works, href = id => '/works/' + id, scored = nu
   }).join('');
   const progress = scored ? '<p class="sheet-progress">Оценено ' + scored.size + ' из ' + works.length + '</p>' : '';
   return cabinetMarkup('<main class="scene catalogue">' + (sheet === undefined ? '' : welcomeContent(sheet, rulesUrl)) +
-    '<section class="projects-section" id="projects"><div class="wrap content projects"><div class="section-head">' +
-    heading('Проекты\nучаст\u00adни\u00adков', sheet === undefined ? 1 : 2) + progress +
+    '<section class="projects-section" id="' + projectsId + '" aria-labelledby="projects-heading" tabindex="-1">' +
+    '<div class="wrap content projects"><div class="section-head">' +
+    heading('Проекты\nучаст\u00adни\u00adков', sheet === undefined ? 1 : 2, 'projects-heading') + progress +
     '</div><ul class="works project-list">' + links + '</ul></div></section></main>');
 }
 
 export function workContent(work, {
   catalogueHref = '/works#' + work.id,
   returnLabel = 'К списку работ', galleryContent = '',
-  pdfControl = '<a class="primary" href="/pdf/' + work.id + '">Открыть PDF</a>',
+  hostedPdf = false,
   votingContent = '<p class="status">Оценивание пока недоступно.</p>'
 } = {}) {
   const megabytes = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(work.bytes / 1_000_000);
+  const pdfTag = hostedPdf ? 'button' : 'a';
+  const pdfAttributes = hostedPdf ? ' type="button" id="open-pdf"' : ' href="/pdf/' + work.id + '"';
   return cabinetMarkup(`
 <main class="scene work-scene"><div class="work-gallery"><div class="wrap content">
   ` + heading(work.title) + `
   ` + galleryContent + `
   <div class="materials">
-    ` + pdfControl + `
-    <span>` + megabytes + ` МБ</span>
+    <` + pdfTag + pdfAttributes + ` class="primary work-pdf" aria-labelledby="work-pdf-label" aria-describedby="work-pdf-size">
+      <span id="work-pdf-label">Открыть PDF</span>
+      <small id="work-pdf-size">` + megabytes + ` МБ</small>
+    </` + pdfTag + `>
   </div>
   <a class="return work-return" href="` + catalogueHref + `">` + escape(returnLabel) + `</a>
 </div></div>

@@ -1,4 +1,4 @@
-import { cabinetMarkup, escape, heading, workNumber } from './views.js?v=2da02c5172f9';
+import { cabinetMarkup, escape, heading, projectsId, workNumber } from './views.js?v=12cf3cc5a61e';
 
 function columnTitle(criterion) {
   if (criterion.key === 'concept') return 'Концепция';
@@ -49,5 +49,5 @@ export function rankingContent(works, sheet, selectedKey) {
   const headingBlock = '<div class="ranking-heading">' + heading('Мой рейтинг работ') +
     (note ? '<div class="ranking-note"><span class="ranking-arrow" aria-hidden="true"></span>' + note + '</div>' : '') + '</div>';
   return cabinetMarkup('<main class="scene rating-scene"><div class="wrap content">' + headingBlock + content +
-    '<a class="return ranking-back" href="#works">К списку работ</a></div></main>');
+    '<a class="return ranking-back" href="#' + projectsId + '">К списку работ</a></div></main>');
 }

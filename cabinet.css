@@ -556,7 +556,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 .catalogue .step-head {
   display: flex;
   min-block-size: calc(132 * var(--archive-unit));
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
   gap: .75rem calc(16 * var(--archive-unit));
 }
@@ -582,7 +582,8 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 .catalogue .step-head .rules-button {
   --control-inset: .6rem;
   inline-size: calc(344 * var(--archive-unit));
-  margin-block-start: calc(14 * var(--archive-unit));
+  position: relative;
+  inset-block-start: calc(-5 * var(--archive-unit));
 }
 .catalogue .projects { padding-block: calc(47 * var(--archive-unit)) calc(64 * var(--archive-unit)); }
 .catalogue .section-head :is(h1, h2) {
@@ -619,10 +620,10 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   .catalogue .intro { margin-block-start: 80px; }
   .catalogue .step { padding-inline-start: 38px; }
   .catalogue .step::before { inset-block-start: 8px; inline-size: 16px; block-size: min(100%, 210px); }
-  .catalogue .step-head { flex-direction: column; gap: 1rem; }
+  .catalogue .step-head { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .catalogue .num { font-size: 4.5rem; }
   .catalogue .step p { font-size: 1.3125rem; }
-  .catalogue .step-head .rules-button { inline-size: fit-content; margin-block-start: 0; }
+  .catalogue .step-head .rules-button { inline-size: fit-content; inset-block-start: auto; }
   .catalogue .section-head :is(h1, h2) { font-size: clamp(1.75rem, 8.2vw, 3.625rem); }
   .catalogue .projects { padding-block: 45px 55px; }
   .catalogue .project-list { margin-block-start: 115px; }
@@ -644,15 +645,19 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 }
 
 /* Work and ranking compositions use the archive’s proportions. */
+.work-scene {
+  --work-group-gap: clamp(1.125rem, 2.25vw, 1.75rem);
+  --work-section-gap: clamp(1.75rem, 4vw, 3.5rem);
+}
 :is(.work-scene, .rating-scene) {
   --archive-sky-height: calc(1080 * var(--archive-unit));
 }
 .masthead + .rating-scene, .work-gallery {
   background: #fff var(--sky) 0 0 / 100% var(--archive-sky-height) no-repeat;
 }
-.work-gallery > .content { padding-block: calc(47 * var(--archive-unit)) calc(64 * var(--archive-unit)); }
+.work-gallery > .content { padding-block: clamp(1.75rem, 4vw, 3rem) calc(var(--work-section-gap) / 2); }
 .work-gallery h1 { font-size: clamp(1.9375rem, calc(110 * var(--archive-unit)), 6.875rem); line-height: 1.1; }
-.work-gallery .sheets { margin-block-start: calc(18 * var(--archive-unit)); }
+.work-gallery .sheets { margin-block-start: var(--work-group-gap); }
 .work-gallery .sheet-strip { gap: max(14px, calc(24 * var(--archive-unit))); scrollbar-color: #4a4e6a transparent; }
 .work-gallery .sheet-preview {
   --control-corner: .625rem;
@@ -665,24 +670,33 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 }
 .work-gallery .sheet-strip.portrait .sheet-preview { flex-basis: min(86%, 26rem); aspect-ratio: 4 / 5; }
 .work-gallery .sheet-preview img { padding: clamp(10px, 1.6667vw, 24px); }
-.work-gallery .sheets + .materials { margin-block-start: max(24px, calc(38 * var(--archive-unit))); }
-.work-gallery .materials .primary {
-  min-block-size: max(2.75rem, calc(84 * var(--archive-unit)));
+.work-gallery .materials { margin-block-start: var(--work-group-gap); }
+.work-gallery .work-pdf {
+  --label-shift: .07em;
+  flex-direction: column;
+  gap: .32em;
+  min-block-size: max(3.5rem, calc(70 * var(--archive-unit)));
   min-inline-size: min(100%, calc(344 * var(--archive-unit)));
-  font-size: max(1rem, calc(24 * var(--archive-unit)));
+  font-size: max(1rem, calc(22 * var(--archive-unit)));
+  line-height: 1.08;
   text-transform: uppercase;
 }
+.work-pdf small { color: #dce3f7; font-size: .72em; }
 .work-return { margin-block: .75rem 0; }
 .work-ballot { background: linear-gradient(180deg, #fff max(20%, calc(100% - 840px)), #dfe6f8 max(55%, calc(100% - 460px)), #929fc5); }
-.work-ballot > .content { padding-block: calc(50 * var(--archive-unit)) calc(80 * var(--archive-unit)); }
+.work-ballot > .content { padding-block: calc(var(--work-section-gap) / 2) clamp(3rem, 5.5vw, 5rem); }
 .work-ballot .ballot { margin-block-start: 0; max-inline-size: none; }
 .work-ballot .ballot > :not(h2) { max-inline-size: 45rem; }
 .work-ballot .ballot h2 {
-  margin-block-end: clamp(1.25rem, calc(32 * var(--archive-unit)), 2rem);
-  font-size: clamp(2.25rem, calc(110 * var(--archive-unit)), 6.875rem);
+  font-size: clamp(1.875rem, 3.75vw, 3.5rem);
   line-height: 1.1;
   text-transform: uppercase;
 }
+.work-ballot .ballot form { margin-block-start: var(--work-group-gap); }
+.work-ballot .criterion { margin-block-end: var(--work-group-gap); }
+.work-ballot .recommendations { margin-block: var(--work-group-gap) 0; }
+.work-ballot .criterion legend small, .criterion-scope { display: block; margin-block-start: .3rem; }
+.criterion-scope { font-size: 1rem; line-height: 1.4; }
 
 .rating-scene .content { padding-block: calc(55.73572 * var(--archive-unit)) calc(90 * var(--archive-unit)); }
 .ranking-heading { display: grid; grid-template-columns: minmax(0, calc(560 * var(--archive-unit))) minmax(0, 1fr); gap: calc(142 * var(--archive-unit)); }
@@ -729,14 +743,10 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 @media (max-width: 45em) {
   .work-scene { --archive-sky-height: 32rem; }
   .rating-scene { --archive-sky-height: max(33rem, calc(100svh - 136px)); }
-  .work-gallery > .content { padding-block: 70px 40px; }
   .work-gallery h1 { font-size: clamp(1.9375rem, 7.3vw, 3.4375rem); }
-  .work-gallery .sheets { margin-block-start: 28px; }
   .work-gallery .sheet-preview { flex-basis: 100%; aspect-ratio: 1.414; }
   .work-gallery .sheet-strip:not(.single, .portrait) .sheet-preview { flex-basis: calc(100% - 28px); }
   .work-ballot { background: linear-gradient(180deg, #fff max(20%, calc(100% - 580px)), #dfe6f8 max(55%, calc(100% - 300px)), #929fc5); }
-  .work-ballot > .content { padding-block: 44px 55px; }
-  .work-ballot .ballot h2 { font-size: clamp(2.25rem, 7.65vw, 3.625rem); }
 
   .rating-scene .content { padding-block: 44px 56px; }
   .ranking-heading { display: block; }

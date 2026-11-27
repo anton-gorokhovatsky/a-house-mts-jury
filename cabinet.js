@@ -1,8 +1,8 @@
-import { backend } from './config.js?v=2da02c5172f9';
-import { cabinetMarkup, displayText, catalogueContent, headerContent, signInContent, workContent } from './views.js?v=2da02c5172f9';
-import { FinalVoting } from './voting.js?v=2da02c5172f9';
-import { FinalGallery } from './gallery.js?v=2da02c5172f9';
-import { rankingContent } from './ranking.js?v=2da02c5172f9';
+import { backend } from './config.js?v=12cf3cc5a61e';
+import { cabinetMarkup, displayText, catalogueContent, headerContent, projectsId, signInContent, workContent } from './views.js?v=12cf3cc5a61e';
+import { FinalVoting } from './voting.js?v=12cf3cc5a61e';
+import { FinalGallery } from './gallery.js?v=12cf3cc5a61e';
+import { rankingContent } from './ranking.js?v=12cf3cc5a61e';
 
 const cabinet = document.querySelector('#cabinet');
 const formOptions = { logo: './logo.svg', method: 'dialog', action: '#' };
@@ -259,7 +259,7 @@ function showCatalogue() {
       catalogueHref: fromRanking ? '#rating/' + work.id + suffix : '#list/' + work.id,
       returnLabel: fromRanking ? 'К моему рейтингу' : 'К списку работ',
       galleryContent: '<section class="sheets" aria-label="Материалы проекта"></section>',
-      pdfControl: '<button type="button" class="primary" id="open-pdf">Открыть PDF</button>',
+      hostedPdf: true,
       votingContent: '<section class="ballot" id="voting" aria-label="Оценка работы"></section>'
     });
   } else if (ranked) {
@@ -274,9 +274,11 @@ function showCatalogue() {
   document.title = (work?.title ?? (ranked ? 'Мой рейтинг работ' : 'Работы финалистов')) + ' · Меняя привычное';
   bindLogout();
   const focusId = area === 'list' ? id : ranked && workId.test(part || '') ? 'rank-' + part : null;
-  const focus = (focusId && document.getElementById(focusId)) || cabinet.querySelector('main h1');
+  const projects = route === projectsId || route === 'works' ? document.getElementById(projectsId) : null;
+  const focus = (focusId && document.getElementById(focusId)) || projects || cabinet.querySelector('main h1');
   if (focus.tagName === 'H1') focus.tabIndex = -1;
-  focus.focus();
+  focus.focus({ preventScroll: Boolean(projects) });
+  if (projects) projects.scrollIntoView({ block: 'start' });
   const retry = cabinet.querySelector('[data-retry]');
   if (retry) retry.onclick = openCabinet;
   const brief = cabinet.querySelector('[data-brief]');
@@ -327,9 +329,10 @@ async function openPdf(work, button) {
   }
   const download = { preview, abort: new AbortController() };
   pendingPdf = download;
-  const label = button.textContent;
+  const caption = button.querySelector('#work-pdf-label') ?? button;
+  const label = caption.textContent;
   button.disabled = true;
-  button.textContent = 'Загружаем PDF…';
+  caption.textContent = 'Загружаем PDF…';
   let notice = cabinet.querySelector('#pdf-notice');
   if (!notice) {
     notice = document.createElement('p');
@@ -371,7 +374,7 @@ async function openPdf(work, button) {
     if (pendingPdf === download) {
       pendingPdf = null;
       button.disabled = false;
-      button.textContent = label;
+      caption.textContent = label;
       if (!notice.textContent) notice.remove();
     }
   }

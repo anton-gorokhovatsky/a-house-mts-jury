@@ -1,8 +1,8 @@
-import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=2da02c5172f9';
+import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=12cf3cc5a61e';
 import {
   approachesIntro, approachRules, conceptHeading, conceptIntro, conceptQuestions, conceptScale, conceptScaleIntro,
-  criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalNotes
-} from './criteria.js?v=2da02c5172f9';
+  criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalScope, technicalTitle
+} from './criteria.js?v=12cf3cc5a61e';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -142,6 +142,7 @@ function field(criterion, answers, standardScale, updated, regulationsUrl) {
   const key = escape(criterion.key);
   const selected = answers[criterion.key];
   const feasibility = criterion.key === 'feasibility' || criterion.key === 'technical_review';
+  const technical = updated && criterion.key === 'technical_review';
   const choices = (feasibility ? feasibilityScale : standardScale).map((meaning, i) =>
     '<label class="score-choice"><input type="radio" name="' + key + '" value="' + i +
     '" aria-label="' + i + ' — ' + escape(meaning) + '" required' + (selected === i ? ' checked' : '') +
@@ -151,15 +152,19 @@ function field(criterion, answers, standardScale, updated, regulationsUrl) {
   const help = descriptions[criterion.key];
   const specialScale = feasibility
     ? scaleDetails('Шкала реализуемости', feasibilityScale, {
-      intro: feasibilityNote, notes: feasibilityDetails,
+      intro: technical ? 'Комплексный, расширенный критерий. ' + feasibilityNote : feasibilityNote,
+      notes: feasibilityDetails,
       source: regulationsUrl ? '<a data-regulations href="' + escape(regulationsUrl) +
         '" target="_blank" rel="noopener noreferrer">Положение о работе жюри, п. 7.4</a>' : ''
     })
-    : criterion.key === 'concept' ? conceptGuide : '';
-  return '<fieldset class="criterion"><legend><criterion-title>' + escape((updated && criterionTitles[criterion.key]) || criterion.label) + '</criterion-title>' +
+    : criterion.key === 'concept' ? scaleDetails('Шкала оценки концепции', conceptScale, {
+      intro: conceptScaleIntro, descending: true
+    }) + conceptGuide : '';
+  const title = technical ? technicalTitle : (updated && criterionTitles[criterion.key]) || criterion.label;
+  return '<fieldset class="criterion"><legend><criterion-title>' + escape(title) + '</criterion-title>' +
+    (technical ? ' <span class="criterion-scope">' + escape(technicalScope) + '</span>' : '') +
     ' <small>Вес ' + criterion.weight + ' %</small></legend>' +
-    (help ? '<p class="criterion-help">' + escape(help) + '</p>' : '') +
-    (updated && criterion.key === 'technical_review' ? paragraphs(technicalNotes) : '') + specialScale +
+    (help ? '<p class="criterion-help">' + escape(help) + '</p>' : '') + specialScale +
     '<div class="score-choices">' + choices + '</div>' + site + '</fieldset>';
 }
 
@@ -299,16 +304,13 @@ export class FinalVoting {
     const closed = !this.data.accepting;
     const updated = this.data.rubric === finalRubric;
     const standardScale = updated ? conceptScale : generalScale;
-    const showStandardScale = !updated || this.data.criteria.some(({ key }) => key === 'concept');
     const message = draft.message ?? (saved ? 'Оценка сохранена.' : '');
     const rules = this.regulationsUrl;
     const rulesLink = rules
       ? '<a class="ballot-rules" data-regulations href="' + escape(rules) + '" target="_blank" rel="noopener noreferrer">Положение о работе жюри</a>' : '';
     region.innerHTML = cabinetMarkup(heading('Ваша оценка', 2) +
       (closed ? '<p class="ballot-note">Голосование закрыто.</p>' : '') +
-      (showStandardScale ? scaleDetails(updated ? 'Шкала оценки концепции' : 'Как выставлять баллы', standardScale, {
-        intro: updated ? conceptScaleIntro : '', descending: updated
-      }) : '') +
+      (updated ? '' : scaleDetails('Как выставлять баллы', standardScale)) +
       (updated ? '' : rulesLink) +
       '<form><fieldset class="ballot-fields"' + (closed || draft.saving ? ' disabled' : '') + '><legend class="sr-only">Оценочный лист</legend>' +
       this.data.criteria.map(c => field(c, draft.answers, standardScale, updated, rules)).join('') +
