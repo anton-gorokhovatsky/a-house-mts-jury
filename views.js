@@ -1,4 +1,4 @@
-import { russianSpacing, typesetText } from './typography.js?v=85bd5bb13dc7';
+import { russianSpacing, typesetText } from './typography.js?v=7e8131a71713';
 
 export const displayText = russianSpacing;
 export const cabinetMarkup = html => typesetText(html, { formatFormText: true });
@@ -107,7 +107,7 @@ function welcomeContent(sheet, rulesUrl) {
     '<div class="intro"><div class="step"><div class="step-head"><span class="num" aria-hidden="true">01</span>' + rulesButton + '</div>' +
     (url ? '<p>Перед началом оценки вы можете ознакомиться с подробным регламентом жюри.</p>' : '<p>Регламент пока недоступен.</p>') +
     '</div><div class="step"><div class="step-head"><span class="num" aria-hidden="true">02</span>' +
-    '<div class="materials"><button type="button" class="primary rules-button" data-brief>Задание 3‑го этапа, которое получили участники</button></div></div>' +
+    '<div class="materials"><button type="button" class="primary rules-button" data-brief>Задание третьего этапа</button></div></div>' +
     instruction +
     '</div></div></div></section>';
 }
@@ -170,10 +170,18 @@ export function catalogueContent(works, href = id => '/works/' + id, scored = nu
     '</div><ul class="works project-list">' + links + '</ul></div></section></main>');
 }
 
+export function workNavigation({ previousHref, nextHref }) {
+  const arrow = '<span class="work-neighbor-arrow" aria-hidden="true"></span>';
+  const previous = previousHref ? '<a rel="prev" href="' + escape(previousHref) + '">' + arrow + '<span>Предыдущая работа</span></a>' : '';
+  const next = nextHref ? '<a rel="next" href="' + escape(nextHref) + '"><span>Следующая работа</span>' + arrow + '</a>' : '';
+  return previous || next
+    ? cabinetMarkup('<nav class="work-neighbors" aria-label="Соседние работы">' + previous + next + '</nav>') : '';
+}
+
 export function workContent(work, {
   catalogueHref = '/works#' + work.id,
   returnLabel = 'К списку работ', galleryContent = '',
-  hostedPdf = false,
+  navigationContent = '', hostedPdf = false,
   votingContent = '<p class="status">Оценивание пока недоступно.</p>'
 } = {}) {
   const megabytes = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(work.bytes / 1_000_000);
@@ -192,7 +200,7 @@ export function workContent(work, {
   <a class="return work-return" href="` + catalogueHref + `">` + escape(returnLabel) + `</a>
 </div></div>
 <div class="work-ballot"><div class="wrap content">
-  ` + votingContent + `
+  ` + votingContent + navigationContent + `
 </div></div></main>`);
 }
 

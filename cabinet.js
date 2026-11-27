@@ -1,8 +1,8 @@
-import { backend } from './config.js?v=85bd5bb13dc7';
-import { cabinetMarkup, displayText, catalogueContent, headerContent, projectsId, signInContent, workContent, regulationsDocument } from './views.js?v=85bd5bb13dc7';
-import { FinalVoting } from './voting.js?v=85bd5bb13dc7';
-import { FinalGallery } from './gallery.js?v=85bd5bb13dc7';
-import { rankingContent } from './ranking.js?v=85bd5bb13dc7';
+import { backend } from './config.js?v=7e8131a71713';
+import { cabinetMarkup, displayText, catalogueContent, headerContent, projectsId, signInContent, workContent, workNavigation, regulationsDocument } from './views.js?v=7e8131a71713';
+import { FinalVoting } from './voting.js?v=7e8131a71713';
+import { FinalGallery } from './gallery.js?v=7e8131a71713';
+import { rankingContent, rankingRows } from './ranking.js?v=7e8131a71713';
 
 const cabinet = document.querySelector('#cabinet');
 const formOptions = { logo: './logo.svg', method: 'dialog', action: '#' };
@@ -160,7 +160,9 @@ async function openCabinet() {
   const epoch = sessionEpoch;
   sessionNotice('Открываем кабинет…', false);
   const sheet = new FinalVoting((rpc, body) => authorizedRequest('/rest/v1/rpc/' + rpc, { method: 'POST', body }), () => {
-    if (voting === sheet && (cabinet.querySelector('.works') || location.hash.startsWith('#rating') && !cabinet.querySelector('#voting'))) showCatalogue();
+    if (voting !== sheet) return;
+    if (cabinet.querySelector('.works') || location.hash.startsWith('#rating') && !cabinet.querySelector('#voting')) showCatalogue();
+    else if (location.hash.startsWith('#rating/work/')) updateRankNavigation();
   }, session.userId);
   try {
     const [result] = await Promise.all([
@@ -245,11 +247,7 @@ function scrollToProjects(projects, animate = false) {
   projects.scrollIntoView({ block: 'start', behavior: smooth ? 'smooth' : 'auto' });
 }
 
-function showCatalogue({ animateProjects = false } = {}) {
-  cancelDownload();
-  closeGallery?.();
-  closeGallery = null;
-  if (!session || !works.length) return;
+function catalogueRoute() {
   const [route, query = ''] = location.hash.slice(1).split('?');
   const [area, part, detail] = route.split('/');
   const fromRanking = area === 'rating' && part === 'work';
@@ -258,10 +256,44 @@ function showCatalogue({ animateProjects = false } = {}) {
   const ranked = area === 'rating' && !work;
   const sort = new URLSearchParams(query).get('by');
   const suffix = sort && voting.data?.criteria.some(c => c.key === sort) ? '?by=' + encodeURIComponent(sort) : '';
+  return { route, area, id, fromRanking, work, ranked, sort, suffix };
+}
+
+function workNeighborLinks({ work, fromRanking, sort, suffix }) {
+  const orderedWorks = fromRanking ? rankingRows(works, voting, sort).rows.map(row => row.work) : works;
+  const index = orderedWorks.indexOf(work);
+  const href = neighbor => neighbor && (fromRanking ? '#rating/work/' + neighbor.id + suffix : '#work/' + neighbor.id);
+  return { previousHref: href(orderedWorks[index - 1]), nextHref: index >= 0 ? href(orderedWorks[index + 1]) : undefined };
+}
+
+function updateRankNavigation() {
+  const ballot = cabinet.querySelector('#voting');
+  if (!ballot) return;
+  const current = ballot.parentElement.querySelector('.work-neighbors');
+  const links = workNeighborLinks(catalogueRoute());
+  if (current?.querySelector('[rel=prev]')?.getAttribute('href') === links.previousHref &&
+      current?.querySelector('[rel=next]')?.getAttribute('href') === links.nextHref) return;
+  const focused = current?.contains(document.activeElement) && document.activeElement.rel;
+  current?.remove();
+  ballot.insertAdjacentHTML('afterend', workNavigation(links));
+  if (focused) {
+    const nav = ballot.parentElement.querySelector('.work-neighbors');
+    (nav?.querySelector('[rel="' + focused + '"]') || nav?.querySelector('a'))?.focus({ preventScroll: true });
+  }
+}
+
+function showCatalogue({ animateProjects = false } = {}) {
+  cancelDownload();
+  closeGallery?.();
+  closeGallery = null;
+  if (!session || !works.length) return;
+  const state = catalogueRoute();
+  const { route, area, id, fromRanking, work, ranked, sort, suffix } = state;
   let content;
   if (work) {
     if (cachedPdf && cachedPdf.id !== work.id) forgetPdf();
     content = workContent(work, {
+      navigationContent: workNavigation(workNeighborLinks(state)),
       catalogueHref: fromRanking ? '#rating/' + work.id + suffix : '#list/' + work.id,
       returnLabel: fromRanking ? 'К моему рейтингу' : 'К списку работ',
       galleryContent: '<section class="sheets" aria-label="Материалы проекта"></section>',
@@ -279,7 +311,7 @@ function showCatalogue({ animateProjects = false } = {}) {
   cabinet.innerHTML = headerContent({ ...formOptions, section, showRanking: voting.data?.role !== 'observer' }) + content;
   document.title = (work?.title ?? (ranked ? 'Мой рейтинг работ' : 'Работы финалистов')) + ' · Меняя привычное';
   bindLogout();
-  const focusId = area === 'list' ? id : ranked && workId.test(part || '') ? 'rank-' + part : null;
+  const focusId = area === 'list' ? id : ranked && workId.test(id || '') ? 'rank-' + id : null;
   const projects = route === projectsId || route === 'works' ? document.getElementById(projectsId) : null;
   if (projects) {
     scrollToProjects(projects, animateProjects);
