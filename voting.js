@@ -1,8 +1,8 @@
-import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=870e8ae90c13';
+import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=fdaa17e8c306';
 import {
   approachesIntro, approachRules, conceptIntro, conceptQuestions, conceptScale, conceptTitle,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalScope, technicalTitle
-} from './criteria.js?v=870e8ae90c13';
+} from './criteria.js?v=fdaa17e8c306';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -195,6 +195,7 @@ const tabDraftMessage = 'Черновик сохранён в этой вкла�
 const memoryDraftMessage = 'Браузер не может записать черновик. Оставьте страницу открытой до отправки оценки.';
 const conflictMessage = 'Сохранённая оценка изменилась. Ваш черновик остался в форме. Можно скопировать свой текст перед загрузкой сохранённой версии.';
 const stores = ['sessionStorage', 'localStorage'];
+const saveLabel = saved => saved ? 'Сохранить изменения' : 'Сохранить оценку';
 
 function sameBallot(a, b, criteria) {
   return b && a.comment === b.comment && (a.nomination_keys ?? []).join() === (b.nomination_keys ?? []).join() &&
@@ -257,11 +258,10 @@ function forgetDraft(draft) {
 }
 
 export class FinalVoting {
-  constructor(call, onSaved, userId, loadRegulations) {
+  constructor(call, onSaved, userId) {
     this.call = call;
     this.onSaved = onSaved;
     this.userId = userId;
-    this.loadRegulations = loadRegulations;
     this.data = null;
     this.saved = new Map();
     this.drafts = new Map();
@@ -282,7 +282,7 @@ export class FinalVoting {
     if (this.data && (this.data.rubric !== data.rubric || this.data.criteria.length !== data.criteria.length ||
         this.data.nomination_recommendations !== data.nomination_recommendations ||
         this.data.criteria.some(({ key }, i) => key !== data.criteria[i].key))) this.drafts.clear();
-    this.regulationsUrl = await this.loadRegulations(regulationsDocument(data.regulations_url));
+    this.regulationsUrl = regulationsDocument(data.regulations_url);
     this.data = data;
     this.saved = new Map(data.ballots.map(ballot => [ballot.work_id, ballot]));
   }
@@ -342,7 +342,7 @@ export class FinalVoting {
       '<textarea id="ballot-comment" name="comment" rows="3" maxlength="5000">\n' + escape(draft.comment) + '</textarea></div>' +
       (canRecommend ? recommendationFields(draft.nomination_keys, recommendationPosition) : '') + '</fieldset><div class="ballot-actions">' +
       (closed ? '' : '<button class="primary save-ballot" type="submit"' + (draft.saving || draft.conflict ? ' disabled' : '') + '>' +
-        (draft.saving ? 'Сохраняем…' : saved ? 'Сохранить изменения' : 'Сохранить оценку') + '</button>') +
+        (draft.saving ? 'Сохраняем…' : saveLabel(saved)) + '</button>') +
       '<p class="ballot-feedback" role="status" aria-live="polite"></p>' +
       (draft.conflict ? '<button type="button" class="secondary" data-reload>' +
         (draft.rubricChanged ? 'Открыть действующий лист' : 'Загрузить сохранённую версию') + '</button>' : '') + '</div></form>' +
@@ -364,10 +364,11 @@ export class FinalVoting {
         draft.nomination_keys = Array.from(form.querySelectorAll('[name="nomination_keys"]:checked'), choice => choice.value);
       } else if (input.type === 'radio') draft.answers[input.name] = input.value === 'na' ? null : Number(input.value);
       let message;
-      if (!draft.conflict && sameBallot(draft, saved, this.data.criteria)) {
+      const latest = this.saved.get(id);
+      if (!draft.conflict && sameBallot(draft, latest, this.data.criteria)) {
         forgetDraft(draft);
         message = 'Оценка сохранена.';
-      } else if (!saved && !draft.comment && !draft.nomination_keys.length && !Object.keys(draft.answers).length) {
+      } else if (!latest && !draft.comment && !draft.nomination_keys.length && !Object.keys(draft.answers).length) {
         forgetDraft(draft);
         message = '';
       } else {
@@ -451,11 +452,26 @@ export class FinalVoting {
       draft.saving = false;
       if (this.current?.id === id && this.current.region.isConnected) {
         const target = this.current.region;
-        this.mount(id, target);
+        const save = target.querySelector('.save-ballot');
+        const bounds = save?.getBoundingClientRect();
+        const focused = document.activeElement;
+        const stillAtSave = target === region && bounds?.bottom > 0 && bounds.top < innerHeight &&
+          (focused === document.body || focused === save);
+        if (draft.conflict || !this.data.accepting || this.data.rubric !== draft.rubric) {
+          this.mount(id, target);
+        } else {
+          target.querySelector('.ballot-fields').disabled = false;
+          save.disabled = false;
+          save.textContent = saveLabel(this.saved.has(id));
+        }
         const feedback = target.querySelector('.ballot-feedback');
         if (feedback) {
-          feedback.tabIndex = -1;
-          feedback.focus({ preventScroll: true });
+          feedback.textContent = displayText(draft.message);
+          if (stillAtSave) {
+            feedback.tabIndex = -1;
+            feedback.focus({ preventScroll: true });
+            if (!draft.conflict && this.data.accepting) feedback.scrollIntoView({ block: 'nearest' });
+          }
         }
       }
     }

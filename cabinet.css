@@ -896,7 +896,8 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 }
 @container (max-width: 20rem) {
   .recommendation-step { grid-template-columns: minmax(0, 1fr); }
-  .recommendation-step h3 { grid-column: 1; }
+  .recommendation-step .criterion-number { grid-row: 1; }
+  .recommendation-step > :where(h3, .recommendations) { grid-column: 1; }
 }
 @container (max-width: 19rem) {
   .criterion-layout { grid-template-columns: minmax(0, 1fr); row-gap: 1.25rem; }

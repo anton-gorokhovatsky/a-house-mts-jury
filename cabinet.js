@@ -1,8 +1,8 @@
-import { backend } from './config.js?v=870e8ae90c13';
-import { cabinetMarkup, displayText, catalogueContent, headerContent, projectsId, signInContent, workContent } from './views.js?v=870e8ae90c13';
-import { FinalVoting } from './voting.js?v=870e8ae90c13';
-import { FinalGallery } from './gallery.js?v=870e8ae90c13';
-import { rankingContent } from './ranking.js?v=870e8ae90c13';
+import { backend } from './config.js?v=fdaa17e8c306';
+import { cabinetMarkup, displayText, catalogueContent, headerContent, projectsId, signInContent, workContent, regulationsDocument } from './views.js?v=fdaa17e8c306';
+import { FinalVoting } from './voting.js?v=fdaa17e8c306';
+import { FinalGallery } from './gallery.js?v=fdaa17e8c306';
+import { rankingContent } from './ranking.js?v=fdaa17e8c306';
 
 const cabinet = document.querySelector('#cabinet');
 const formOptions = { logo: './logo.svg', method: 'dialog', action: '#' };
@@ -161,7 +161,7 @@ async function openCabinet() {
   sessionNotice('Открываем кабинет…', false);
   const sheet = new FinalVoting((rpc, body) => authorizedRequest('/rest/v1/rpc/' + rpc, { method: 'POST', body }), () => {
     if (voting === sheet && (cabinet.querySelector('.works') || location.hash.startsWith('#rating') && !cabinet.querySelector('#voting'))) showCatalogue();
-  }, session.userId, loadRegulations);
+  }, session.userId);
   try {
     const [result] = await Promise.all([
       authorizedRequest('/rest/v1/jury_works?select=id,title,bytes&order=position'),
@@ -326,16 +326,33 @@ function leave(feedback, revoke = false) {
   showSignIn(feedback);
 }
 
-async function openPdf(work, button) {
-  if (pendingPdf) return;
-  const oldLink = cabinet.querySelector('#pdf-link');
-  oldLink?.remove();
+function pdfPreview() {
   const preview = window.open('about:blank', '_blank');
   if (preview) {
     preview.opener = null;
     preview.document.title = 'Загрузка PDF';
     preview.document.body.textContent = 'Загружаем PDF…';
   }
+  return preview;
+}
+
+async function openRegulations(event, link) {
+  const source = link.href;
+  const preview = pdfPreview();
+  if (!preview) return;
+  event.preventDefault();
+  const epoch = sessionEpoch;
+  const href = await loadRegulations(source);
+  if (preview.closed) return;
+  if (epoch !== sessionEpoch || !href) preview.close();
+  else preview.location.replace(href);
+}
+
+async function openPdf(work, button) {
+  if (pendingPdf) return;
+  const oldLink = cabinet.querySelector('#pdf-link');
+  oldLink?.remove();
+  const preview = pdfPreview();
   const download = { preview, abort: new AbortController() };
   pendingPdf = download;
   const caption = button.querySelector('#work-pdf-label') ?? button;
@@ -392,6 +409,10 @@ async function openPdf(work, button) {
 cabinet.addEventListener('click', event => {
   if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   const link = event.target.closest?.('a');
+  if (link?.hasAttribute('data-regulations') && regulationsDocument(link.href)) {
+    void openRegulations(event, link);
+    return;
+  }
   const hash = '#' + projectsId;
   if (link?.getAttribute('href') !== hash) return;
   event.preventDefault();
