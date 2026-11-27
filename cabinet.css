@@ -121,12 +121,15 @@ h1, h2 { font-family: var(--display-face); font-weight: 400; letter-spacing: nor
 }
 .primary { --control-inset: .85rem; display: inline-flex; align-items: center; justify-content: center; padding-inline: 1.3rem; min-height: 3rem; color: #fff; background: #161722; text-align: center; text-decoration: none; border: 1px solid #161722; }
 .login-card .primary {
+  --label-shift: .13em;
+  --login-label-tracking: .08em;
   width: 100%;
   min-block-size: max(3.125rem, calc(102 * var(--archive-unit)));
   margin-block-start: 14px;
   font-size: max(1.1875rem, calc(34 * var(--archive-unit)));
   text-transform: uppercase;
-  letter-spacing: .08em;
+  letter-spacing: var(--login-label-tracking);
+  text-indent: var(--login-label-tracking);
 }
 .form-error { color: #8e1130; margin-top: 1rem; line-height: 1.4; }
 
@@ -297,8 +300,10 @@ criterion-title .whole-word { white-space: nowrap; }
 .no-site input { margin: 0; }
 .comment-label { display: block; margin-bottom: .5rem; }
 .ballot textarea { max-width: 39rem; min-height: 5rem; padding: .75rem; font: inherit; resize: vertical; }
-.materials .primary, .save-ballot { --label-shift: 0px; }
-.save-ballot { margin-top: 1rem; }
+.save-ballot {
+  --label-shift: -.035em;
+  margin-top: 1rem;
+}
 .ballot-note, .ballot-feedback:not(:empty) { margin-top: .8rem; line-height: 1.4; }
 .secondary { margin-top: .5rem; min-height: 2.75rem; padding: .55rem .85rem; color: #161722; background: #fff; border: 1px solid #747b8d; }
 .ballot button:disabled { cursor: default; }
@@ -497,6 +502,8 @@ form.login-card { --corner-extent: clamp(1.5rem, 2.35vw, 2rem); }
   }
 }
 .sheet-arrow { inline-size: 2.9rem; padding: .2rem; font: 1.25rem/1 system-ui, sans-serif; }
+/* The zoom signs sit low in the system font. */
+.sheet-arrow[data-zoom] { padding-block: 0 .17em; }
 .sheet-arrow[aria-disabled="true"] { opacity: .5; cursor: default; }
 .sheet-tool { padding: .4em .8em; }
 .sheet-number { min-inline-size: 7ch; text-align: center; font-variant-numeric: tabular-nums; }
@@ -516,13 +523,21 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 .sheets + .materials { margin-block-start: clamp(1.25rem, 2.5vw, 2rem); }
 
 @container sheet-viewer (max-width: 18em) {
-  .sheet-dialog-top { display: grid; grid-template-columns: 44px minmax(0, 1fr) repeat(3, 44px); gap: .1em; }
-  .sheet-zoom { display: contents; }
+  .sheet-dialog-top, .sheet-zoom { gap: .25rem .1em; }
+  .sheet-zoom { max-inline-size: 100%; }
+  .sheet-dialog-top :is(.sheet-arrow, .sheet-tool) { flex: none; inline-size: 44px; }
+  .sheet-dialog-top [data-close] { margin-inline-start: auto; }
   .sheet-dialog-top .sheet-label { display: none; }
-  .sheet-dialog-top .sheet-symbol { display: inline; }
+  .sheet-dialog-top .sheet-symbol {
+    display: inline;
+    position: relative;
+    inset-block-start: var(--label-shift);
+  }
+  .sheet-dialog-top [data-zoom="reset"] .sheet-symbol { --label-shift: -.03em; }
   .sheet-arrow, .sheet-tool { min-block-size: max(44px, 1.4em); padding: 0; }
   .sheet-arrow { inline-size: 44px; font-size: 1em; }
   .zoom-value, .sheet-number { min-inline-size: 0; white-space: nowrap; }
+  .zoom-value { flex: none; }
   .sheet-controls { flex-wrap: nowrap; column-gap: .35em; }
 }
 
@@ -762,7 +777,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   gap: .5rem .625rem;
 }
 .work-gallery .work-pdf {
-  --label-shift: .07em;
+  --label-shift: .09em;
   flex: 1 1 min-content;
   max-inline-size: min(100%, max(12.25rem, calc(344 * var(--archive-unit))));
   min-block-size: max(3.5rem, calc(64 * var(--archive-unit)));
