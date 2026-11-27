@@ -1,4 +1,4 @@
-import { russianSpacing, typesetText } from './typography.js?v=7e8131a71713';
+import { russianSpacing, typesetText } from './typography.js?v=3ed0724839c0';
 
 export const displayText = russianSpacing;
 export const cabinetMarkup = html => typesetText(html, { formatFormText: true });
@@ -171,9 +171,10 @@ export function catalogueContent(works, href = id => '/works/' + id, scored = nu
 }
 
 export function workNavigation({ previousHref, nextHref }) {
-  const arrow = '<span class="work-neighbor-arrow" aria-hidden="true"></span>';
+  const arrow = '<svg class="work-neighbor-arrow" viewBox="0 0 50 32" aria-hidden="true" focusable="false">' +
+    '<path d="M0 16H48.5 M34 1.5L48.5 16 34 30.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
   const previous = previousHref ? '<a rel="prev" href="' + escape(previousHref) + '">' + arrow + '<span>Предыдущая работа</span></a>' : '';
-  const next = nextHref ? '<a rel="next" href="' + escape(nextHref) + '"><span>Следующая работа</span>' + arrow + '</a>' : '';
+  const next = nextHref ? '<a rel="next" href="' + escape(nextHref) + '">' + arrow + '<span>Следующая работа</span></a>' : '';
   return previous || next
     ? cabinetMarkup('<nav class="work-neighbors" aria-label="Соседние работы">' + previous + next + '</nav>') : '';
 }
