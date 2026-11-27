@@ -1,4 +1,4 @@
-import { russianSpacing, typesetText } from './typography.js?v=55b34da88db5';
+import { russianSpacing, typesetText } from './typography.js?v=de2efe7a27ad';
 
 export const displayText = russianSpacing;
 export const cabinetMarkup = html => typesetText(html, { formatFormText: true });
@@ -67,6 +67,31 @@ export function regulationsDocument(url) {
   return typeof url === 'string' && /^https:\/\/disk\.360\.yandex\.ru\/[di]\/[\w-]+$/.test(url) ? url : null;
 }
 
+function juryIntroduction() {
+  return `<section class="jury-introduction" aria-labelledby="jury-introduction-heading">
+    <header>
+      ${heading('Регламент работы жюри', 2, 'jury-introduction-heading')}
+      <p class="jury-introduction-subtitle">3 этап конкурса «Меняя привычное»</p>
+    </header>
+    <div class="jury-introduction-copy">
+      <p>Спасибо, что присоединились к составу жюри конкурса!</p>
+      <p>Пожалуйста, обратите внимание, что членами Жюри не могут быть лица, имеющие <strong>конфликт интересов</strong> с любым из Участников.</p>
+    </div>
+    <div class="jury-introduction-stages">
+      <p>Наш конкурс состоит из трёх этапов:</p>
+      <ol class="jury-stages" role="list">
+        <li><p class="jury-stage-heading"><strong>На первом этапе</strong> <span class="jury-stage-dates">(19.05–17.06)</span></p>
+          <p>мы отобрали сильнейшие бюро по предоставленному ими портфолио.</p></li>
+        <li><p class="jury-stage-heading"><strong>На втором этапе</strong> <span class="jury-stage-dates">(18.08–29.09)</span></p>
+          <p>выбрали лучшие архитектурные концепции и эскизные работы.</p></li>
+        <li><p class="jury-stage-heading"><strong>На третьем этапе</strong> <span class="jury-stage-dates">(20.10–22.11)</span></p>
+          <p>лучшие эскизные работы получат задание на детальную архитектурно-инженерную проработку своей концепции.</p></li>
+      </ol>
+    </div>
+    <p>По итогам конкурса мы проведем выставку лучших работ, а также одну из представленных концепций МТС планирует реализовать.</p>
+  </section>`;
+}
+
 function welcomeContent(sheet, rulesUrl) {
   let instruction;
   if (sheet?.role === 'observer') {
@@ -85,7 +110,7 @@ function welcomeContent(sheet, rulesUrl) {
     ? '<a class="primary rules-button" data-regulations href="' + escape(url) + '" target="_blank" rel="noopener noreferrer">Регламент жюри</a>'
     : '';
   return '<section class="welcome"><div class="wrap content pagehead">' +
-    heading('Рады видеть вас в составе жюри конкурса!') +
+    heading('Рады видеть вас в составе жюри конкурса!') + juryIntroduction() +
     '<div class="intro"><div class="step"><div class="step-head"><span class="num" aria-hidden="true">01</span>' + rulesButton + '</div>' +
     (url ? '<p>Перед началом ознакомьтесь с подробным регламентом по оценке работ.</p>' : '<p>Регламент пока недоступен.</p>') +
     '</div><div class="step"><div class="step-head"><span class="num" aria-hidden="true">02</span>' +

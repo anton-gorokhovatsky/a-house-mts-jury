@@ -1,8 +1,8 @@
-import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=55b34da88db5';
+import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=de2efe7a27ad';
 import {
   approachesIntro, approachRules, conceptIntro, conceptQuestions, conceptScale, conceptTitle,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalScope, technicalTitle
-} from './criteria.js?v=55b34da88db5';
+} from './criteria.js?v=de2efe7a27ad';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -38,13 +38,15 @@ function nominationSelection(keys) {
   return Array.isArray(keys) ? nominations.map(({ key }) => key).filter(key => keys.includes(key)) : [];
 }
 
-function recommendationFields(selected) {
+function recommendationFields(selected, position) {
   const choices = nominations.map(({ key, name }) =>
     '<label class="nomination-option"><input class="sr-only" type="checkbox" name="nomination_keys" value="' + key +
     '"' + (selected.includes(key) ? ' checked' : '') + '><span class="work-mark" aria-hidden="true">' + checkIcon +
     '</span><span>' + escape(name.replace(/^\d+\.\s*/, '')) + '</span></label>').join('');
-  return '<fieldset class="recommendations"><legend>Рекомендовать на номинации <small>по желанию</small></legend>' +
-    choices + '</fieldset>';
+  const number = String(position).padStart(2, '0');
+  return '<div class="criterion-layout recommendation-step"><span class="criterion-number" data-edges aria-hidden="true">' + number + '</span>' +
+    '<h3 id="recommendation-heading">Рекомендовать на номинации <small>по желанию</small></h3>' +
+    '<fieldset class="recommendations" aria-labelledby="recommendation-heading">' + choices + '</fieldset></div>';
 }
 
 function scaleValues(scale, { notes, name } = {}) {
@@ -148,7 +150,7 @@ class CriterionTitle extends HTMLElement {
 customElements.define('criterion-title', CriterionTitle);
 
 
-function field(criterion, answers, standardScale, updated, regulationsUrl) {
+function field(criterion, position, answers, standardScale, updated, regulationsUrl) {
   const key = escape(criterion.key);
   const selected = answers[criterion.key];
   const feasibility = criterion.key === 'feasibility' || criterion.key === 'technical_review';
@@ -172,7 +174,7 @@ function field(criterion, answers, standardScale, updated, regulationsUrl) {
   const controls = '<div class="score-choices">' + choices + '</div>' + site;
   const weight = escape(criterion.weight) + ' %';
   if (updated) {
-    const number = String(criterion.position).padStart(2, '0');
+    const number = String(position).padStart(2, '0');
     const title = technical ? technicalTitle : criterion.key === 'concept' ? conceptTitle : criterion.label;
     const headingId = 'criterion-' + key;
     return '<fieldset class="criterion criterion-final" aria-labelledby="' + headingId + '"><div class="criterion-layout">' +
@@ -325,6 +327,7 @@ export class FinalVoting {
     const updated = this.data.rubric === finalRubric;
     region.classList.toggle('ballot-final', updated);
     const standardScale = updated ? conceptScale : generalScale;
+    const recommendationPosition = this.data.criteria.length + 1;
     const message = draft.message ?? (saved ? 'Оценка сохранена.' : '');
     const rules = this.regulationsUrl;
     const rulesLink = rules
@@ -334,10 +337,10 @@ export class FinalVoting {
       (updated ? '' : scaleDetails('Как выставлять баллы', standardScale)) +
       (updated ? '' : rulesLink) +
       '<form><fieldset class="ballot-fields"' + (closed || draft.saving ? ' disabled' : '') + '><legend class="sr-only">Оценочный лист</legend>' +
-      this.data.criteria.map(c => field(c, draft.answers, standardScale, updated, rules)).join('') +
+      this.data.criteria.map((criterion, index) => field(criterion, index + 1, draft.answers, standardScale, updated, rules)).join('') +
       '<div class="ballot-follow-up"><label class="comment-label" for="ballot-comment">Комментарий <small>по желанию</small></label>' +
-      '<textarea id="ballot-comment" name="comment" rows="3" maxlength="5000">\n' + escape(draft.comment) + '</textarea>' +
-      (canRecommend ? recommendationFields(draft.nomination_keys) : '') + '</div></fieldset><div class="ballot-actions">' +
+      '<textarea id="ballot-comment" name="comment" rows="3" maxlength="5000">\n' + escape(draft.comment) + '</textarea></div>' +
+      (canRecommend ? recommendationFields(draft.nomination_keys, recommendationPosition) : '') + '</fieldset><div class="ballot-actions">' +
       (closed ? '' : '<button class="primary save-ballot" type="submit"' + (draft.saving || draft.conflict ? ' disabled' : '') + '>' +
         (draft.saving ? 'Сохраняем…' : saved ? 'Сохранить изменения' : 'Сохранить оценку') + '</button>') +
       '<p class="ballot-feedback" role="status" aria-live="polite"></p>' +

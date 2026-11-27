@@ -304,9 +304,7 @@ criterion-title .whole-word { white-space: nowrap; }
 .ballot button:disabled { cursor: default; }
 .scale .guide-list { margin-block-end: 1.25em; list-style: disc; padding-inline-start: 1.3rem; }
 .guide-list li + li { margin-top: .45rem; }
-.recommendations { min-inline-size: 0; margin: 1.75rem 0 0; padding: 0; border: 0; }
-.recommendations legend { padding: 0; font-size: 1.25em; }
-.recommendations legend small { color: #414859; }
+.recommendations { min-inline-size: 0; margin: 0; padding: 0; border: 0; }
 .nomination-option {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
@@ -538,11 +536,51 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   line-height: 1.08;
   text-wrap: wrap;
 }
+.jury-introduction {
+  container-type: inline-size;
+  display: grid;
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+  max-inline-size: 56rem;
+  margin-block-start: clamp(2rem, 5vw, 4.5rem);
+  font-size: max(1.125rem, calc(24 * var(--archive-unit)));
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.jury-introduction h2 {
+  --stem-bearing: .035em;
+  font: 400 clamp(1.625rem, 4vw, 2.5rem) / 1.1 var(--body-face);
+}
+.jury-introduction :is(.jury-introduction-subtitle, .jury-stage-dates) {
+  color: #414859;
+  font-size: max(1rem, .8333em);
+}
+.jury-introduction-subtitle { margin-block-start: .375rem; }
+.jury-introduction-copy p + p { margin-block-start: .65em; }
+.jury-stages {
+  list-style: none;
+  padding: 0;
+  margin: .65em 0 0;
+  display: grid;
+  gap: .8em;
+}
+.jury-stages li { display: grid; row-gap: .125em; }
+.jury-stage-dates { white-space: nowrap; }
+@container (width > 34rem) {
+  .jury-stages {
+    grid-template-columns: max-content minmax(0, 1fr);
+    column-gap: 1.25em;
+  }
+  .jury-stages li {
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
+  .jury-stage-heading .jury-stage-dates { display: block; }
+}
 .catalogue .intro {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: clamp(2.5rem, calc(64 * var(--archive-unit)), 4rem);
-  margin-block-start: calc(128 * var(--archive-unit));
+  margin-block-start: clamp(3rem, 6vw, 5.5rem);
 }
 .catalogue .step {
   position: relative;
@@ -624,7 +662,6 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   .projects-section, .scene:not(.catalogue) { background-size: 100% 650px; }
   .catalogue .pagehead { min-block-size: auto; padding-block: 44px 50px; }
   .catalogue .pagehead h1 { font-size: clamp(2.125rem, 8vw, 3.5rem); line-height: 1.14; }
-  .catalogue .intro { margin-block-start: 80px; }
   .catalogue .step { padding-inline-start: 38px; }
   .catalogue .step::before { inset-block-start: 8px; inline-size: 16px; block-size: min(100%, 210px); }
   .catalogue .step-head { flex-direction: column; align-items: flex-start; gap: 1rem; }
@@ -728,7 +765,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 }
 .work-ballot .ballot form { margin-block-start: var(--work-group-gap); }
 .work-ballot .criterion { margin-block-end: var(--work-group-gap); }
-.work-ballot .recommendations { margin-block: var(--work-group-gap) 0; }
+.work-ballot .recommendation-step { margin-block-start: var(--work-group-gap); }
 /* In the archive the criterion number/weight and the score occupy separate columns. */
 .ballot-final {
   --criterion-column-gap: 0px;
@@ -771,7 +808,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   margin: 0;
   max-inline-size: min(100%, max(30rem, calc(688 * var(--archive-unit))));
 }
-:is(.criterion-main h3, .ballot-final .recommendations legend) {
+:is(.criterion-main h3, .recommendation-step h3) {
   font: 400 max(1.25rem, calc(40 * var(--archive-unit))) / 1.1 var(--body-face);
 }
 .criterion-main criterion-title { display: block; }
@@ -815,9 +852,12 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   margin-inline-start: var(--ballot-inset);
   max-inline-size: 45rem;
 }
-.ballot-final :is(.comment-label, .recommendations legend) { margin-block-end: var(--ballot-field-gap); }
-.ballot-final .comment-label { line-height: 1.25; }
-.ballot-final :is(.comment-label, .recommendations legend) small {
+.recommendation-step { row-gap: var(--ballot-field-gap); }
+.recommendation-step .criterion-number { grid-column: 1; grid-row: 1 / span 2; align-self: start; }
+.recommendation-step > :where(h3, .recommendations) { grid-column: 2; max-inline-size: 45rem; }
+.recommendation-step h3 { margin: 0; padding-block-start: calc(17 * var(--archive-unit)); }
+.ballot-final .comment-label { margin-block-end: var(--ballot-field-gap); line-height: 1.25; }
+.ballot-final :is(.comment-label, .recommendation-step h3) small {
   font-size: var(--ballot-meta-size);
   color: #414859;
   white-space: nowrap;
@@ -849,7 +889,10 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   .work-ballot .ballot-final > h2 { font-size: clamp(2.25rem, 7.65vw, 3.625rem); }
   .criterion-number { font-size: 2.5rem; line-height: 1; }
   .criterion-main { padding-block-start: 0; }
-  :is(.criterion-main h3, .ballot-final .recommendations legend) { line-height: 1.15; }
+  :is(.criterion-main h3, .recommendation-step h3) { line-height: 1.15; }
+  .recommendation-step .criterion-number { grid-row: 1; }
+  .recommendation-step h3 { padding-block-start: 0; align-self: center; }
+  .recommendation-step .recommendations { grid-column: 1 / -1; }
   .criterion-final .score-choices {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -857,6 +900,10 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
     max-inline-size: 21rem;
   }
   .criterion-final .score-choice { inline-size: 100%; }
+}
+@container (max-width: 20rem) {
+  .recommendation-step { grid-template-columns: minmax(0, 1fr); }
+  .recommendation-step h3 { grid-column: 1; }
 }
 @container (max-width: 19rem) {
   .criterion-layout { grid-template-columns: minmax(0, 1fr); row-gap: 1.25rem; }
