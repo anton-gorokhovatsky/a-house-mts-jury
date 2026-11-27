@@ -5,7 +5,6 @@ export const criterionTitles = {
 };
 export const technicalTitle = "Реализуемость, эффективность, конструктивная логика";
 export const technicalScope = "Соответствие техническим требованиям объекта";
-export const conceptTitle = "Сила и потенциал концепции, идеи и заложенных смыслов";
 export const conceptIntro = "Оценка задуманной концепции и её описания:";
 export const conceptQuestions = [
   "Каковы обоснование и аргументация выбора концепции? В чём её концептуальная новизна?",

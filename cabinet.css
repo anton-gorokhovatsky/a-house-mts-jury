@@ -304,20 +304,27 @@ criterion-title .whole-word { white-space: nowrap; }
 .ballot button:disabled { cursor: default; }
 .scale .guide-list { margin-block-end: 1.25em; list-style: disc; padding-inline-start: 1.3rem; }
 .guide-list li + li { margin-top: .45rem; }
-.recommendations { min-inline-size: 0; margin: 0; padding: 0; border: 0; }
+.recommendations {
+  --nomination-mark-size: 1.5rem;
+  --nomination-mark-gap: .65rem;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
 .nomination-option {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   align-content: center;
   align-items: start;
-  gap: .65rem;
+  gap: var(--nomination-mark-gap);
   min-block-size: 44px;
   padding-block: .3em;
   cursor: pointer;
   overflow-wrap: anywhere;
 }
 .nomination-option .work-mark {
-  --mark-size: 1.5rem;
+  --mark-size: var(--nomination-mark-size);
   margin-inline-start: 0;
   /* Centre on the ink of the first line, even when the label wraps. */
   margin-block-start: calc((1lh - var(--mark-size)) / 2 - .08em);
@@ -325,6 +332,13 @@ criterion-title .whole-word { white-space: nowrap; }
 .nomination-option input:not(:checked) + .work-mark svg { visibility: hidden; }
 .nomination-option input:focus-visible + .work-mark { outline: .18rem solid #315cc0; outline-offset: .15rem; }
 .nomination-option:has(input:disabled) { cursor: default; }
+.nomination-option input[disabled] + .work-mark { opacity: .55; }
+.nomination-assigned {
+  margin-inline-start: calc(var(--nomination-mark-size) + var(--nomination-mark-gap));
+  font-size: var(--ballot-meta-size);
+  color: #414859;
+}
+.nomination-choice:not(:last-child) .nomination-assigned { margin-block-end: var(--ballot-field-gap); }
 .nominations { max-inline-size: 60ch; margin-block-start: calc(2 * var(--ballot-field-gap)); }
 .nominations section + section { margin-block-start: var(--work-group-gap); }
 .nominations h3, .nominations h4 {
@@ -546,16 +560,11 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
-.jury-introduction h2 {
-  --stem-bearing: .035em;
-  font: 400 clamp(1.625rem, 4vw, 2.5rem) / 1.1 var(--body-face);
-}
+.jury-introduction-subtitle { font: 400 max(1rem, .8333em) / 1.4 var(--body-face); }
 .jury-introduction :is(.jury-introduction-subtitle, .jury-stage-dates) {
   color: #414859;
   font-size: max(1rem, .8333em);
 }
-.jury-introduction-subtitle { margin-block-start: .375rem; }
-.jury-introduction-copy p + p { margin-block-start: .65em; }
 .jury-stages {
   list-style: none;
   padding: 0;
@@ -749,7 +758,15 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   .work-gallery .work-pdf { max-inline-size: none; }
 }
 .work-return { margin-block: .75rem 0; }
-.work-ballot { background: linear-gradient(180deg, #fff max(20%, calc(100% - 840px)), #dfe6f8 max(55%, calc(100% - 460px)), #929fc5); }
+.work-ballot {
+  --criterion-column-gap: 0px;
+  --ballot-inset: calc(var(--criterion-sidebar) + var(--criterion-column-gap));
+  --ballot-body-size: max(1rem, calc(24 * var(--archive-unit)));
+  --ballot-field-gap: .5rem;
+  --ballot-meta-size: max(.875rem, calc(18 * var(--archive-unit)));
+  --ballot-measure: 45rem;
+  background: linear-gradient(180deg, #fff max(20%, calc(100% - 840px)), #dfe6f8 max(55%, calc(100% - 460px)), #929fc5);
+}
 @media (width > 45em) {
   .work-ballot:has(.ballot-final) {
     background: linear-gradient(180deg, #fff max(25%, calc(100% - 650px)), #dfe6f8 max(60%, calc(100% - 320px)), #929fc5);
@@ -757,7 +774,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 }
 .work-ballot > .content { padding-block: calc(var(--work-section-gap) / 2) clamp(3rem, 5.5vw, 5rem); }
 .work-ballot .ballot { margin-block-start: 0; max-inline-size: none; }
-.work-ballot .ballot > :not(h2) { max-inline-size: 45rem; }
+.work-ballot .ballot > :not(h2) { max-inline-size: var(--ballot-measure); }
 .work-ballot .ballot h2 {
   font-size: clamp(1.875rem, 3.75vw, 3.5rem);
   line-height: 1.1;
@@ -768,11 +785,6 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 .work-ballot .recommendation-step { margin-block-start: var(--work-group-gap); }
 /* In the archive the criterion number/weight and the score occupy separate columns. */
 .ballot-final {
-  --criterion-column-gap: 0px;
-  --ballot-inset: calc(var(--criterion-sidebar) + var(--criterion-column-gap));
-  --ballot-field-gap: .5rem;
-  --ballot-body-size: max(1rem, calc(24 * var(--archive-unit)));
-  --ballot-meta-size: max(.875rem, calc(18 * var(--archive-unit)));
   font-size: var(--ballot-body-size);
   line-height: 1.45;
   container-type: inline-size;
@@ -841,16 +853,16 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 .score-scale li { display: block; }
 .score-scale li + li { margin-block-start: 0; }
 .work-ballot .criterion-final { margin-block-end: var(--work-section-gap); }
-.ballot-final :is(.ballot-follow-up, .ballot-actions, .ballot-references) {
+.ballot-final :is(.ballot-follow-up, .ballot-actions, .ballot-references, .nomination-reference) {
   margin-inline-start: var(--ballot-inset);
-  max-inline-size: 45rem;
+  max-inline-size: var(--ballot-measure);
 }
 .recommendation-step { row-gap: var(--ballot-field-gap); }
 .recommendation-step .criterion-number { grid-column: 1; grid-row: 1 / span 2; }
-.recommendation-step > :where(h3, .recommendations) { grid-column: 2; max-inline-size: 45rem; }
+.recommendation-step > :where(h3, .recommendations) { grid-column: 2; max-inline-size: var(--ballot-measure); }
 .recommendation-step h3 { margin: 0; padding-block-start: calc(17 * var(--archive-unit)); }
 .ballot-final .comment-label { margin-block-end: var(--ballot-field-gap); line-height: 1.25; }
-.ballot-final :is(.comment-label, .recommendation-step h3) small {
+.ballot-final .comment-label small {
   font-size: var(--ballot-meta-size);
   color: #414859;
   white-space: nowrap;
@@ -864,12 +876,9 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 }
 .ballot-final .ballot-feedback:not(:empty) { margin-block-start: var(--ballot-field-gap); font-size: var(--ballot-meta-size); }
 .ballot-references { margin-block-start: var(--work-section-gap); }
-.ballot-reference-links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--ballot-field-gap) clamp(1rem, 2.5vw, 2rem);
-}
+.ballot-references .ballot-rules { display: inline-flex; align-items: center; }
+.nomination-reference { margin-block-start: var(--work-group-gap); }
+#nomination-instruction { margin-block-end: var(--ballot-field-gap); color: #414859; }
 .ballot-reference-toggle {
   border: 0;
   background: none;
@@ -878,7 +887,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   text-align: start;
 }
 @media (max-width: 45em) {
-  .ballot-final { --criterion-sidebar: 5rem; --criterion-column-gap: 1.125rem; --ballot-inset: 0px; }
+  .work-ballot { --criterion-sidebar: 5rem; --criterion-column-gap: 1.125rem; --ballot-inset: 0px; }
   .work-ballot .ballot-final > h2 { font-size: clamp(2.25rem, 7.65vw, 3.625rem); }
   .criterion-number { font-size: 2.5rem; line-height: 1; }
   .criterion-main { padding-block-start: 0; }

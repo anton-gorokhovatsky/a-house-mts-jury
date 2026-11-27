@@ -1,8 +1,8 @@
-import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=fdaa17e8c306';
+import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=85bd5bb13dc7';
 import {
-  approachesIntro, approachRules, conceptIntro, conceptQuestions, conceptScale, conceptTitle,
+  approachesIntro, approachRules, conceptIntro, conceptQuestions, conceptScale,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalScope, technicalTitle
-} from './criteria.js?v=fdaa17e8c306';
+} from './criteria.js?v=85bd5bb13dc7';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -21,32 +21,39 @@ function disclosure(title, content, className = '') {
 }
 
 const paragraphs = lines => lines.map(line => '<p>' + escape(line) + '</p>').join('');
-const conceptGuide = weightNote => disclosure('Подробнее о критерии', paragraphs([weightNote, criterionTitles.concept, conceptIntro]) +
+const conceptGuide = weightNote => disclosure('Подробнее о критерии', paragraphs([weightNote, conceptIntro]) +
   '<ul class="guide-list">' + conceptQuestions.map(text => '<li>' + escape(text) + '</li>').join('') + '</ul>' +
   '<p>' + escape(approachesIntro) + ' <a href="' + approachRules + '" target="_blank" rel="noopener noreferrer">Пункт&nbsp;6.1 правил конкурса</a></p>');
 const nominationsGuide = nominations.map(item => '<section>' + heading(item.name, 3) + paragraphs(item.paragraphs) + '</section>').join('') +
   '<section><h4>' + escape(distinctionHeading) + '</h4>' + paragraphs([distinction]) + '</section>';
 
-function ballotReferences(rulesLink) {
-  return '<aside class="ballot-references" aria-label="Справочные материалы"><div class="ballot-reference-links">' +
-    '<button type="button" class="ballot-reference-toggle" aria-expanded="false" aria-controls="nomination-criteria">' +
-    escape(nominationsTitle) + '</button>' + rulesLink + '</div>' +
-    '<div id="nomination-criteria" class="nominations" hidden>' + nominationsGuide + '</div></aside>';
+function nominationReference() {
+  return '<div class="nomination-reference"><button type="button" class="ballot-reference-toggle" aria-expanded="false" aria-controls="nomination-criteria">' +
+    escape(nominationsTitle) + '</button>' +
+    '<div id="nomination-criteria" class="nominations" hidden>' + nominationsGuide + '</div></div>';
 }
 
 function nominationSelection(keys) {
   return Array.isArray(keys) ? nominations.map(({ key }) => key).filter(key => keys.includes(key)) : [];
 }
 
-function recommendationFields(selected, position) {
-  const choices = nominations.map(({ key, name }) =>
-    '<label class="nomination-option"><input class="sr-only" type="checkbox" name="nomination_keys" value="' + key +
-    '"' + (selected.includes(key) ? ' checked' : '') + '><span class="work-mark" aria-hidden="true">' + checkIcon +
-    '</span><span>' + escape(name.replace(/^\d+\.\s*/, '')) + '</span></label>').join('');
+function recommendationFields(selected, position, assigned) {
+  const choices = nominations.map(({ key, name }) => {
+    const workId = assigned.get(key);
+    const checked = selected.includes(key);
+    const blocked = workId && !checked;
+    const note = workId ? '<p class="nomination-assigned"><a href="#work/' + escape(workId) + '">Открыть рекомендованную работу</a></p>' : '';
+    return '<div class="nomination-choice"><label class="nomination-option"><input class="sr-only" type="checkbox" name="nomination_keys" value="' + key +
+      '"' + (checked ? ' checked' : '') + (blocked ? ' disabled' : '') +
+      '><span class="work-mark" aria-hidden="true">' + checkIcon +
+      '</span><span>' + escape(name.replace(/^\d+\.\s*/, '')) + '</span></label>' + note + '</div>';
+  }).join('');
   const number = String(position).padStart(2, '0');
   return '<div class="criterion-layout recommendation-step"><span class="criterion-number" data-edges aria-hidden="true">' + number + '</span>' +
-    '<h3 id="recommendation-heading">Рекомендовать на номинации <small>по желанию</small></h3>' +
-    '<fieldset class="recommendations" aria-labelledby="recommendation-heading">' + choices + '</fieldset></div>';
+    '<h3 id="recommendation-heading">Рекомендовать на номинацию</h3>' +
+    '<fieldset class="recommendations" aria-labelledby="recommendation-heading" aria-describedby="nomination-instruction">' +
+    '<p id="nomination-instruction">Предпочтение в каждой номинации можно отдать только одному участнику.</p>' +
+    choices + '</fieldset></div>';
 }
 
 function scaleValues(scale, { notes, name } = {}) {
@@ -176,7 +183,7 @@ function field(criterion, position, answers, standardScale, updated, regulations
   const controls = '<div class="score-choices">' + choices + '</div>' + site;
   if (updated) {
     const number = String(position).padStart(2, '0');
-    const title = technical ? technicalTitle : criterion.key === 'concept' ? conceptTitle : criterion.label;
+    const title = technical ? technicalTitle : criterion.key === 'concept' ? criterionTitles.concept : criterion.label;
     const headingId = 'criterion-' + key;
     return '<fieldset class="criterion criterion-final" aria-labelledby="' + headingId + '"><div class="criterion-layout">' +
       '<span class="criterion-number" data-edges aria-hidden="true">' + escape(number) + '</span>' +
@@ -328,6 +335,15 @@ export class FinalVoting {
     region.classList.toggle('ballot-final', updated);
     const standardScale = updated ? conceptScale : generalScale;
     const recommendationPosition = this.data.criteria.length + 1;
+    const assignedNominations = new Map();
+    if (canRecommend) {
+      for (const [workId, ballot] of this.saved) {
+        if (workId === id) continue;
+        for (const key of nominationSelection(ballot.nomination_keys)) {
+          assignedNominations.set(key, workId);
+        }
+      }
+    }
     const message = draft.message ?? (saved ? 'Оценка сохранена.' : '');
     const rules = this.regulationsUrl;
     const rulesLink = rules
@@ -340,13 +356,14 @@ export class FinalVoting {
       this.data.criteria.map((criterion, index) => field(criterion, index + 1, draft.answers, standardScale, updated, rules)).join('') +
       '<div class="ballot-follow-up"><label class="comment-label" for="ballot-comment">Комментарий <small>по желанию</small></label>' +
       '<textarea id="ballot-comment" name="comment" rows="3" maxlength="5000">\n' + escape(draft.comment) + '</textarea></div>' +
-      (canRecommend ? recommendationFields(draft.nomination_keys, recommendationPosition) : '') + '</fieldset><div class="ballot-actions">' +
+      (canRecommend ? recommendationFields(draft.nomination_keys, recommendationPosition, assignedNominations) : '') + '</fieldset>' +
+      (updated && canRecommend ? nominationReference() : '') + '<div class="ballot-actions">' +
       (closed ? '' : '<button class="primary save-ballot" type="submit"' + (draft.saving || draft.conflict ? ' disabled' : '') + '>' +
         (draft.saving ? 'Сохраняем…' : saveLabel(saved)) + '</button>') +
       '<p class="ballot-feedback" role="status" aria-live="polite"></p>' +
       (draft.conflict ? '<button type="button" class="secondary" data-reload>' +
         (draft.rubricChanged ? 'Открыть действующий лист' : 'Загрузить сохранённую версию') + '</button>' : '') + '</div></form>' +
-      (updated ? ballotReferences(rulesLink) : ''));
+      (updated && rulesLink ? '<aside class="ballot-references" aria-label="Справочные материалы">' + rulesLink + '</aside>' : ''));
     const nominationsToggle = region.querySelector('.ballot-reference-toggle');
     nominationsToggle?.addEventListener('click', () => {
       const guide = region.querySelector('#nomination-criteria');
@@ -416,9 +433,14 @@ export class FinalVoting {
     const form = region.querySelector('form');
     form.querySelector('.ballot-fields').disabled = true;
     const button = form.querySelector('.save-ballot');
+    const status = form.querySelector('[role="status"]');
+    // Shorter pending labels can clamp scroll when Save is near the bottom.
+    for (const element of [button, status]) {
+      element.style.minBlockSize = element.getBoundingClientRect().height + 'px';
+    }
     button.disabled = true;
     button.textContent = 'Сохраняем…';
-    form.querySelector('[role="status"]').textContent = draft.message;
+    status.textContent = draft.message;
     try {
       const response = await this.call('jury_save_rubric_ballot', {
         p_rubric: draft.rubric, p_work_id: id, p_answers: draft.answers, p_comment: draft.comment, p_revision: draft.revision,
@@ -432,6 +454,8 @@ export class FinalVoting {
       } else if (response.status === 409) {
         draft.conflict = true;
         draft.message = conflictMessage;
+      } else if (response.status === 422 && (await response.json()).message === 'NOMINATION_ALREADY_RECOMMENDED') {
+        draft.message = 'В одной из выбранных номинаций уже рекомендована другая работа. Снимите повторную отметку и сохраните оценку ещё раз.';
       } else if (response.status === 403 && (await response.json()).message === 'VOTING_CLOSED') {
         this.data.accepting = false;
         draft.message = 'Голосование закрыто. Изменения не сохранены.';
@@ -463,14 +487,19 @@ export class FinalVoting {
           target.querySelector('.ballot-fields').disabled = false;
           save.disabled = false;
           save.textContent = saveLabel(this.saved.has(id));
+          save.style.removeProperty('min-block-size');
         }
         const feedback = target.querySelector('.ballot-feedback');
         if (feedback) {
           feedback.textContent = displayText(draft.message);
+          feedback.style.removeProperty('min-block-size');
           if (stillAtSave) {
             feedback.tabIndex = -1;
             feedback.focus({ preventScroll: true });
-            if (!draft.conflict && this.data.accepting) feedback.scrollIntoView({ block: 'nearest' });
+            const position = feedback.getBoundingClientRect();
+            if (!draft.conflict && this.data.accepting && (position.top < 0 || position.bottom > innerHeight)) {
+              feedback.scrollIntoView({ block: 'nearest' });
+            }
           }
         }
       }
