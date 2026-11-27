@@ -558,9 +558,11 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   min-block-size: calc(132 * var(--archive-unit));
   align-items: center;
   flex-wrap: wrap;
-  gap: .75rem calc(16 * var(--archive-unit));
+  gap: .75rem max(1rem, calc(24 * var(--archive-unit)));
 }
-.catalogue .num { min-inline-size: 1.75em; font: 400 calc(120 * var(--archive-unit)) / 1.1 var(--display-face); }
+.catalogue .num { font: 400 calc(120 * var(--archive-unit)) / 1.1 var(--display-face); }
+/* The last digit in 01 has a wider right sidebearing. */
+.catalogue .step:first-child .num { margin-inline-end: calc(-4 * var(--archive-unit)); }
 .catalogue .step p {
   font-size: max(1.125rem, calc(34 * var(--archive-unit)));
   line-height: 1.2;
