@@ -1,4 +1,4 @@
-import { russianSpacing, typesetText } from './typography.js?v=61207dc59179';
+import { russianSpacing, typesetText } from './typography.js?v=36a0c05224ca';
 
 export const displayText = russianSpacing;
 export const cabinetMarkup = html => typesetText(html, { formatFormText: true });
@@ -86,9 +86,9 @@ function welcomeContent(sheet, rulesUrl) {
     heading('Рады видеть вас в составе жюри конкурса!') +
     '<div class="intro"><div class="step"><div class="step-head"><span class="num" aria-hidden="true">01</span>' + rulesButton + '</div>' +
     (url ? '<p>Перед началом ознакомьтесь с подробным регламентом по оценке работ.</p>' : '<p>Регламент пока недоступен.</p>') +
-    '</div><div class="step"><div class="step-head"><span class="num" aria-hidden="true">02</span></div>' +
+    '</div><div class="step"><div class="step-head"><span class="num" aria-hidden="true">02</span>' +
+    '<div class="materials"><button type="button" class="primary rules-button" data-brief>Бриф для участников 3‑го этапа</button></div></div>' +
     instruction +
-    '<div class="materials"><button type="button" class="primary rules-button" data-brief>Бриф для участников 3-го этапа</button></div>' +
     '</div></div></div></section>';
 }
 

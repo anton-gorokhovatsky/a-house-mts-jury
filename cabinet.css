@@ -36,9 +36,10 @@
   background: #fff;
   --archive-unit: min(.0694444444vw, 1px);
   --sky-dark: #4a4e6a;
-  --sky-stops: var(--sky-dark) 0%, #afbde2 15.3846%, #ced8f1 31.25%, #fff 53.8462%, #fff 100%;
-  --sky: linear-gradient(180deg, var(--sky-stops));
-  --sky-inverse: linear-gradient(0deg, var(--sky-stops));
+  --sky-boundary: #646987;
+  --sky-light-stops: #afbde2 15.3846%, #ced8f1 31.25%, #fff 53.8462%, #fff 100%;
+  --sky: linear-gradient(180deg, var(--sky-dark) 0%, var(--sky-light-stops));
+  --sky-inverse: linear-gradient(0deg, var(--sky-dark) 0%, var(--sky-light-stops));
   --control-corner: .95rem;
   --width: 1440px;
 }
@@ -129,7 +130,14 @@ h1, h2 { font-family: var(--display-face); font-weight: 400; letter-spacing: nor
 }
 .form-error { color: #8e1130; margin-top: 1rem; line-height: 1.4; }
 
-.masthead { background: var(--sky-dark); color: #fff; }
+.masthead {
+  color: #fff;
+  background-color: var(--sky-dark);
+  background-image: linear-gradient(180deg, var(--sky-dark), #525774 55%, var(--sky-boundary));
+}
+.masthead + .scene:not(.catalogue), .masthead + .catalogue .welcome {
+  --sky: linear-gradient(180deg, var(--sky-boundary) 0%, var(--sky-light-stops));
+}
 .masthead-inner {
   display: flex;
   align-items: center;
@@ -550,9 +558,9 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   min-block-size: calc(132 * var(--archive-unit));
   align-items: flex-start;
   flex-wrap: wrap;
-  gap: .75rem calc(64 * var(--archive-unit));
+  gap: .75rem calc(16 * var(--archive-unit));
 }
-.catalogue .num { font: 400 calc(120 * var(--archive-unit)) / 1.1 var(--display-face); }
+.catalogue .num { min-inline-size: 1.75em; font: 400 calc(120 * var(--archive-unit)) / 1.1 var(--display-face); }
 .catalogue .step p {
   font-size: max(1.125rem, calc(34 * var(--archive-unit)));
   line-height: 1.2;
@@ -561,7 +569,8 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   overflow-wrap: anywhere;
 }
 .catalogue .step-head + p { margin-block-start: clamp(1.5rem, calc(40 * var(--archive-unit)), 2.5rem); }
-.catalogue .step .materials { margin-block: 1.5rem 0; }
+.catalogue .step-head .materials { margin-block: 0; max-inline-size: 100%; }
+.catalogue .step-head > .status { flex-basis: 100%; margin-block: 0; font-size: inherit; line-height: 1.45; }
 .catalogue .rules-button {
   max-inline-size: 100%;
   min-block-size: max(2.75rem, calc(84 * var(--archive-unit)));
@@ -571,6 +580,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   overflow-wrap: anywhere;
 }
 .catalogue .step-head .rules-button {
+  --control-inset: .6rem;
   inline-size: calc(344 * var(--archive-unit));
   margin-block-start: calc(14 * var(--archive-unit));
 }
