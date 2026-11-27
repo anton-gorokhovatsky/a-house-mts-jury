@@ -1,8 +1,8 @@
-import { cabinetMarkup, displayText, escape, heading, regulationsDocument } from './views.js?v=ead517627975';
+import { cabinetMarkup, displayText, escape, heading, regulationsDocument } from './views.js?v=f48c798fc0e4';
 import {
   approachesIntro, approachRules, conceptHeading, conceptIntro, conceptQuestions, conceptScale, conceptScaleIntro,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalNotes
-} from './criteria.js?v=ead517627975';
+} from './criteria.js?v=f48c798fc0e4';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -27,17 +27,6 @@ const conceptGuide = disclosure('Что учитывать при оценке �
 const nominationsGuide = disclosure(nominationsTitle,
   nominations.map(item => '<section>' + heading(item.name, 3) + paragraphs(item.paragraphs) + '</section>').join('') +
   '<section><h4>' + escape(distinctionHeading) + '</h4>' + paragraphs([distinction]) + '</section>', 'nominations');
-
-function weightTable(criteria) {
-  const rows = Object.entries(criterionTitles).map(([key, title], i) => {
-    // A juror only receives their own fields. Both published weights are in the source table.
-    const weight = criteria.find(item => item.key === key)?.weight ?? 50;
-    return '<tr><th scope="row">' + (i + 1) + '</th><td>' + escape(title) +
-      (key === 'technical_review' ? paragraphs(technicalNotes) : '') + '</td><td>' + weight + '</td></tr>';
-  });
-  return disclosure('Критерии оценки', '<table class="rubric-weights"><thead><tr><th>№</th><th>Критерий оценки</th><th>Вес (%)</th></tr></thead>' +
-    '<tbody>' + rows.join('') + '</tbody><tfoot><tr><td></td><th scope="row">ИТОГО</th><td>100</td></tr></tfoot></table>');
-}
 
 function scaleDetails(title, scale, { intro = '', descending = false, notes, source = '' } = {}) {
   const rows = scale.map((meaning, i) =>
@@ -289,7 +278,6 @@ export class FinalVoting {
       ? '<a class="ballot-rules" data-regulations href="' + escape(rules) + '" target="_blank" rel="noopener noreferrer">Положение о работе жюри</a>' : '';
     region.innerHTML = cabinetMarkup(heading('Ваша оценка', 2) +
       (closed ? '<p class="ballot-note">Голосование закрыто.</p>' : '') +
-      (updated ? weightTable(this.data.criteria) : '') +
       scaleDetails(updated ? 'Шкала оценки концепции' : 'Как выставлять баллы', standardScale, { intro: updated ? conceptScaleIntro : '', descending: updated }) +
       (updated ? '' : rulesLink) +
       '<form><fieldset class="ballot-fields"' + (closed || draft.saving ? ' disabled' : '') + '><legend class="sr-only">Оценочный лист</legend>' +
