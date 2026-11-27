@@ -673,15 +673,15 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 .work-gallery .materials { margin-block-start: var(--work-group-gap); }
 .work-pdf-group {
   display: flex;
-  align-items: center;
+  align-items: end;
   flex-wrap: wrap;
-  max-inline-size: 100%;
-  gap: .5rem clamp(.875rem, 1.6vw, 1.5rem);
+  inline-size: 100%;
+  gap: .5rem .625rem;
 }
 .work-gallery .work-pdf {
   --label-shift: .07em;
-  inline-size: max(12.25rem, calc(344 * var(--archive-unit)));
-  max-inline-size: 100%;
+  flex: 1 1 min-content;
+  max-inline-size: min(100%, max(12.25rem, calc(344 * var(--archive-unit))));
   min-block-size: max(3.5rem, calc(64 * var(--archive-unit)));
   font-size: max(1rem, calc(22 * var(--archive-unit)));
   line-height: 1.15;
@@ -689,8 +689,10 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 }
 .work-pdf-group small {
   color: #414859;
-  font-size: max(1rem, calc(22 * var(--archive-unit)));
-  line-height: 1.25;
+  font-size: max(1.25rem, calc(30 * var(--archive-unit)));
+  line-height: 1;
+  /* Align the visible numerals with the bottom of the button. */
+  margin-block-end: -.1em;
   white-space: nowrap;
 }
 .work-return { margin-block: .75rem 0; }
