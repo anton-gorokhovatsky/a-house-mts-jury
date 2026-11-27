@@ -1,8 +1,8 @@
-import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=b5ea51b86604';
+import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=d017c4545299';
 import {
   approachesIntro, approachRules, conceptIntro, conceptQuestions, conceptScale, conceptTitle,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalScope, technicalTitle
-} from './criteria.js?v=b5ea51b86604';
+} from './criteria.js?v=d017c4545299';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -38,7 +38,7 @@ function recommendationFields(selected) {
     '"' + (selected.includes(key) ? ' checked' : '') + '><span class="work-mark" aria-hidden="true">' + checkIcon +
     '</span><span>' + escape(name.replace(/^\d+\.\s*/, '')) + '</span></label>').join('');
   return '<fieldset class="recommendations"><legend>Рекомендовать на номинации <small>по желанию</small></legend>' +
-    nominationsGuide + choices + '</fieldset>';
+    choices + '</fieldset>';
 }
 
 function scaleValues(scale, { notes, name } = {}) {
@@ -171,7 +171,7 @@ function field(criterion, answers, standardScale, updated, regulationsUrl) {
     const headingId = 'criterion-' + key;
     return '<fieldset class="criterion criterion-final" aria-labelledby="' + headingId + '"><div class="criterion-layout">' +
       '<div class="criterion-meta"><span class="criterion-number" aria-hidden="true">' + escape(number) + '</span>' +
-      '<p class="criterion-weight">Вес критерия <span>' + weight + '</span></p></div>' +
+      '<p class="criterion-weight">Вес <span>' + weight + '</span></p></div>' +
       '<div class="criterion-main"><h3 id="' + headingId + '"><criterion-title>' + escape(title) + '</criterion-title></h3>' +
       (technical ? '<p class="criterion-scope">' + escape(technicalScope) + '</p>' : '') + specialScale + controls +
       '<div class="score-scale">' + scaleValues(scale, { name: feasibility ? 'Шкала реализуемости' : 'Шкала оценки концепции' }) +
@@ -337,7 +337,7 @@ export class FinalVoting {
       '<p class="ballot-feedback" role="status" aria-live="polite"></p>' +
       (draft.conflict ? '<button type="button" class="secondary" data-reload>' +
         (draft.rubricChanged ? 'Открыть действующий лист' : 'Загрузить сохранённую версию') + '</button>' : '') + '</div></form>' +
-      (updated ? (canRecommend ? '' : nominationsGuide) + rulesLink : ''));
+      (updated ? '<aside class="ballot-references" aria-label="Справочные материалы">' + nominationsGuide + rulesLink + '</aside>' : ''));
     const form = region.querySelector('form');
     const feedback = form.querySelector('[role="status"]');
     feedback.textContent = displayText(message);
