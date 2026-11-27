@@ -18,7 +18,7 @@
   <use href="#frame" x="40" fill="white" stroke="#70798a"/>
   <use href="#frame" x="80" fill="#161722" stroke="#161722"/>
   <use href="#frame" x="120" fill="#32374d" stroke="#161722"/>
-  <use href="#frame" x="160" fill="none" stroke="#11121a"/>
+  <use href="#frame" x="160" fill="none" stroke="#fff"/>
   <use href="#frame" x="200" fill="white" stroke="#747b8d"/>
   <use href="#frame" x="240" fill="#20263a" stroke="#20263a"/>
   <use href="#frame" x="280" fill="#e7ecf8" stroke="#53668c"/>

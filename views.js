@@ -1,4 +1,4 @@
-import { russianSpacing, typesetText } from './typography.js?v=f48c798fc0e4';
+import { russianSpacing, typesetText } from './typography.js?v=1a6a022f466b';
 
 export const displayText = russianSpacing;
 export const cabinetMarkup = html => typesetText(html, { formatFormText: true });
@@ -102,21 +102,29 @@ export function signInContent({ next = '', login = '', message = '', logo = '/lo
     <div class="wrap hero">
       <img src="` + logo + `" width="398" alt="МТС и A–House">
       <h1 id="contest">Меняя<br>привычное</h1>
-      <p>Третий этап конкурса</p>
+      <div class="cover-subtitle">
+        <h2>Третий этап конкурса</h2>
+        <p>Оценка архитектурных концепций опор базовых станций связи</p>
+      </div>
     </div>
   </section>
   <section class="login-section" aria-labelledby="sign-in">
     <form class="login-card" method="` + method + `" action="` + action + `">
       <h2 id="sign-in" ` + opticalEdges('Вход для жюри') + `>Вход <span class="word-group">для<wbr> жюри</span></h2>
       <input type="hidden" name="next" value="` + escape(next) + `">
-      <label for="login">Логин</label>
-      <input id="login" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="254" value="` + escape(login) + `">
-      <label for="password">Пароль</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024"` + passwordAttributes + `>` + feedback + `
+      <label class="sr-only" for="login">Логин</label>
+      <input id="login" name="login" placeholder="Логин" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="254" value="` + escape(login) + `">
+      <label class="sr-only" for="password">Пароль</label>
+      <input id="password" name="password" placeholder="Пароль" type="password" autocomplete="current-password" required maxlength="1024"` + passwordAttributes + `>` + feedback + `
       <button class="primary"` + (ready ? '' : ' disabled') + `>Войти</button>
     </form>
+    <p class="login-hint">Войдите с логином и паролем, выданными для участия в жюри.</p>
   </section>
 </main>`);
+}
+
+export function workNumber(index) {
+  return String(index + 1).padStart(2, '0');
 }
 
 export function catalogueContent(works, href = id => '/works/' + id, scored = null, sheet, rulesUrl) {
@@ -129,7 +137,7 @@ export function catalogueContent(works, href = id => '/works/' + id, scored = nu
         '<span class="sr-only">' + (saved ? 'Оценена' : 'Ожидает оценки') + '</span>';
     }
     return '<li><a class="work-link" id="' + work.id + '" href="' + href(work.id) + '"><span class="work-number">' +
-      String(index + 1).padStart(2, '0') + '</span><span ' +
+      workNumber(index) + '</span><span ' +
       opticalEdges(work.title) + '>' + escape(work.title) + '</span>' + status + '</a></li>';
   }).join('');
   const progress = scored ? '<p class="sheet-progress">Оценено ' + scored.size + ' из ' + works.length + '</p>' : '';
@@ -147,16 +155,18 @@ export function workContent(work, {
 } = {}) {
   const megabytes = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(work.bytes / 1_000_000);
   return cabinetMarkup(`
-<main class="scene"><div class="wrap content">
-  <a class="return" href="` + catalogueHref + `">` + escape(returnLabel) + `</a>
+<main class="scene work-scene"><div class="work-gallery"><div class="wrap content">
   ` + heading(work.title) + `
   ` + galleryContent + `
   <div class="materials">
     ` + pdfControl + `
     <span>` + megabytes + ` МБ</span>
   </div>
+  <a class="return work-return" href="` + catalogueHref + `">` + escape(returnLabel) + `</a>
+</div></div>
+<div class="work-ballot"><div class="wrap content">
   ` + votingContent + `
-</div></main>`);
+</div></div></main>`);
 }
 
 export function signInPage(options) {

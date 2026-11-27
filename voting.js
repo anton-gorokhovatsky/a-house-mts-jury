@@ -1,8 +1,8 @@
-import { cabinetMarkup, displayText, escape, heading, regulationsDocument } from './views.js?v=f48c798fc0e4';
+import { cabinetMarkup, displayText, escape, heading, regulationsDocument } from './views.js?v=1a6a022f466b';
 import {
   approachesIntro, approachRules, conceptHeading, conceptIntro, conceptQuestions, conceptScale, conceptScaleIntro,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalNotes
-} from './criteria.js?v=f48c798fc0e4';
+} from './criteria.js?v=1a6a022f466b';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -160,6 +160,10 @@ function sameBallot(a, b, criteria) {
   return b && a.comment === b.comment && criteria.every(({ key }) => a.answers[key] === b.answers[key]);
 }
 
+function answersFor(answers, criteria) {
+  return Object.fromEntries(criteria.filter(({ key }) => Object.hasOwn(answers, key)).map(({ key }) => [key, answers[key]]));
+}
+
 function readDraft(key, criteria) {
   for (const store of stores) {
     try {
@@ -169,11 +173,14 @@ function readDraft(key, criteria) {
       if (!Number.isSafeInteger(item.revision) || item.revision < 0 ||
           typeof item.comment !== 'string' || item.comment.length > 5000 ||
           !item.answers || typeof item.answers !== 'object' || Array.isArray(item.answers)) continue;
-      const valid = Object.entries(item.answers).every(([name, value]) => {
-        const criterion = criteria.find(c => c.key === name);
-        return criterion && ((value === null && criterion.site_only) || (Number.isInteger(value) && value >= 0 && value <= 5));
+      // A draft from the previous sheet can contain an answer outside the current role.
+      const answers = answersFor(item.answers, criteria);
+      const valid = criteria.every(({ key, site_only }) => {
+        if (!Object.hasOwn(answers, key)) return true;
+        const value = answers[key];
+        return (value === null && site_only) || (Number.isInteger(value) && value >= 0 && value <= 5);
       });
-      if (valid) return { answers: item.answers, comment: item.comment, revision: item.revision, raw,
+      if (valid) return { answers, comment: item.comment, revision: item.revision, raw,
         message: store === 'localStorage' || readLocalCopy(key) === raw ? draftMessage : tabDraftMessage };
     } catch { /* The other storage or the server copy may still be available. */ }
   }
@@ -230,7 +237,8 @@ export class FinalVoting {
         !['juror', 'technical', 'observer'].includes(data.role) || !Array.isArray(data.criteria) ||
         !Array.isArray(data.ballots) || typeof data.accepting !== 'boolean' ||
         (data.role !== 'observer' && !data.criteria.length)) throw new Error('Invalid score sheet');
-    if (this.data && this.data.rubric !== data.rubric) this.drafts.clear();
+    if (this.data && (this.data.rubric !== data.rubric || this.data.criteria.length !== data.criteria.length ||
+        this.data.criteria.some(({ key }, i) => key !== data.criteria[i].key))) this.drafts.clear();
     this.regulationsUrl = await this.loadRegulations(regulationsDocument(data.regulations_url));
     this.data = data;
     this.saved = new Map(data.ballots.map(ballot => [ballot.work_id, ballot]));
@@ -272,13 +280,16 @@ export class FinalVoting {
     const closed = !this.data.accepting;
     const updated = this.data.rubric === finalRubric;
     const standardScale = updated ? conceptScale : generalScale;
+    const showStandardScale = !updated || this.data.criteria.some(({ key }) => key === 'concept');
     const message = draft.message ?? (saved ? 'Оценка сохранена.' : '');
     const rules = this.regulationsUrl;
     const rulesLink = rules
       ? '<a class="ballot-rules" data-regulations href="' + escape(rules) + '" target="_blank" rel="noopener noreferrer">Положение о работе жюри</a>' : '';
     region.innerHTML = cabinetMarkup(heading('Ваша оценка', 2) +
       (closed ? '<p class="ballot-note">Голосование закрыто.</p>' : '') +
-      scaleDetails(updated ? 'Шкала оценки концепции' : 'Как выставлять баллы', standardScale, { intro: updated ? conceptScaleIntro : '', descending: updated }) +
+      (showStandardScale ? scaleDetails(updated ? 'Шкала оценки концепции' : 'Как выставлять баллы', standardScale, {
+        intro: updated ? conceptScaleIntro : '', descending: updated
+      }) : '') +
       (updated ? '' : rulesLink) +
       '<form><fieldset class="ballot-fields"' + (closed || draft.saving ? ' disabled' : '') + '><legend class="sr-only">Оценочный лист</legend>' +
       this.data.criteria.map(c => field(c, draft.answers, standardScale, updated, rules)).join('') +
@@ -323,8 +334,16 @@ export class FinalVoting {
       form.querySelector('.ballot-fields').disabled = true;
       try {
         await this.load();
-        forgetDraft(draft);
-        this.drafts.delete(id);
+        if (draft.rubricChanged && this.data.rubric === draft.rubric) {
+          draft.answers = answersFor(draft.answers, this.data.criteria);
+          draft.rubricChanged = false;
+          draft.conflict = draft.revision !== (this.saved.get(id)?.revision ?? 0);
+          draft.message = draft.conflict ? conflictMessage : rememberDraft(draft);
+          this.drafts.set(id, draft);
+        } else {
+          forgetDraft(draft);
+          this.drafts.delete(id);
+        }
         if (region.isConnected) this.mount(id, region);
       } catch {
         feedback.textContent = displayText('Загрузить сохранённую версию не удалось. Ваш ввод остался в форме.');

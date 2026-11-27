@@ -8,13 +8,13 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; font-src 'self' blob: https://static.tildacdn.com; img-src 'self' blob: data:; connect-src 'self' https://qlzszcunhphficvkezsk.supabase.co; form-action 'none'; base-uri 'none'">
 <title>Вход для жюри · Меняя привычное</title>
 <link rel="preconnect" href="https://static.tildacdn.com" crossorigin>
-<link rel="stylesheet" href="../cabinet.css?v=f48c798fc0e4">
-<link rel="modulepreload" href="../views.js?v=f48c798fc0e4">
-<link rel="modulepreload" href="../config.js?v=f48c798fc0e4">
-<link rel="modulepreload" href="../typography.js?v=f48c798fc0e4">
-<link rel="modulepreload" href="../criteria.js?v=f48c798fc0e4">
-<link rel="modulepreload" href="../voting.js?v=f48c798fc0e4">
-<script type="module" src="../cabinet.js?v=f48c798fc0e4"></script>
+<link rel="stylesheet" href="../cabinet.css?v=1a6a022f466b">
+<link rel="modulepreload" href="../views.js?v=1a6a022f466b">
+<link rel="modulepreload" href="../config.js?v=1a6a022f466b">
+<link rel="modulepreload" href="../typography.js?v=1a6a022f466b">
+<link rel="modulepreload" href="../criteria.js?v=1a6a022f466b">
+<link rel="modulepreload" href="../voting.js?v=1a6a022f466b">
+<script type="module" src="../cabinet.js?v=1a6a022f466b"></script>
 </head>
 <body>
 <div id="cabinet">
@@ -23,19 +23,23 @@
     <div class="wrap hero">
       <img src="./logo.svg" width="398" alt="МТС и A–House">
       <h1 id="contest">Меняя<br>привычное</h1>
-      <p>Третий этап конкурса</p>
+      <div class="cover-subtitle">
+        <h2>Третий этап конкурса</h2>
+        <p>Оценка архитектурных концепций опор базовых станций связи</p>
+      </div>
     </div>
   </section>
   <section class="login-section" aria-labelledby="sign-in">
     <form class="login-card" method="dialog" action="#">
       <h2 id="sign-in" data-edges="stem tight">Вход <span class="word-group">для<wbr> жюри</span></h2>
       <input type="hidden" name="next" value="">
-      <label for="login">Логин</label>
-      <input id="login" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="254" value="">
-      <label for="password">Пароль</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024">
+      <label class="sr-only" for="login">Логин</label>
+      <input id="login" name="login" placeholder="Логин" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="254" value="">
+      <label class="sr-only" for="password">Пароль</label>
+      <input id="password" name="password" placeholder="Пароль" type="password" autocomplete="current-password" required maxlength="1024">
       <button class="primary" disabled>Войти</button>
     </form>
+    <p class="login-hint">Войдите с логином и паролем, выданными для участия в жюри.</p>
   </section>
 </main></div>
 <noscript><p>Для входа включите JavaScript.</p></noscript>
