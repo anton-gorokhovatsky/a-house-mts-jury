@@ -1,8 +1,8 @@
-import { cabinetMarkup, displayText, escape, heading, regulationsDocument } from './views.js?v=b0749abb5147';
+import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=61207dc59179';
 import {
   approachesIntro, approachRules, conceptHeading, conceptIntro, conceptQuestions, conceptScale, conceptScaleIntro,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalNotes
-} from './criteria.js?v=b0749abb5147';
+} from './criteria.js?v=61207dc59179';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -27,6 +27,19 @@ const conceptGuide = disclosure('Что учитывать при оценке �
 const nominationsGuide = disclosure(nominationsTitle,
   nominations.map(item => '<section>' + heading(item.name, 3) + paragraphs(item.paragraphs) + '</section>').join('') +
   '<section><h4>' + escape(distinctionHeading) + '</h4>' + paragraphs([distinction]) + '</section>', 'nominations');
+
+function nominationSelection(keys) {
+  return Array.isArray(keys) ? nominations.map(({ key }) => key).filter(key => keys.includes(key)) : [];
+}
+
+function recommendationFields(selected) {
+  const choices = nominations.map(({ key, name }) =>
+    '<label class="nomination-option"><input class="sr-only" type="checkbox" name="nomination_keys" value="' + key +
+    '"' + (selected.includes(key) ? ' checked' : '') + '><span class="work-mark" aria-hidden="true">' + checkIcon +
+    '</span><span>' + escape(name.replace(/^\d+\.\s*/, '')) + '</span></label>').join('');
+  return '<fieldset class="recommendations"><legend>Рекомендовать на номинации <small>по желанию</small></legend>' +
+    nominationsGuide + choices + '</fieldset>';
+}
 
 function scaleDetails(title, scale, { intro = '', descending = false, notes, source = '' } = {}) {
   const rows = scale.map((meaning, i) =>
@@ -157,14 +170,15 @@ const conflictMessage = 'Сохранённая оценка изменилас�
 const stores = ['sessionStorage', 'localStorage'];
 
 function sameBallot(a, b, criteria) {
-  return b && a.comment === b.comment && criteria.every(({ key }) => a.answers[key] === b.answers[key]);
+  return b && a.comment === b.comment && (a.nomination_keys ?? []).join() === (b.nomination_keys ?? []).join() &&
+    criteria.every(({ key }) => a.answers[key] === b.answers[key]);
 }
 
 function answersFor(answers, criteria) {
   return Object.fromEntries(criteria.filter(({ key }) => Object.hasOwn(answers, key)).map(({ key }) => [key, answers[key]]));
 }
 
-function readDraft(key, criteria) {
+function readDraft(key, criteria, savedNominations, canRecommend) {
   for (const store of stores) {
     try {
       const raw = window[store].getItem(key);
@@ -181,6 +195,7 @@ function readDraft(key, criteria) {
         return (value === null && site_only) || (Number.isInteger(value) && value >= 0 && value <= 5);
       });
       if (valid) return { answers, comment: item.comment, revision: item.revision, raw,
+        nomination_keys: canRecommend ? nominationSelection(item.nomination_keys ?? savedNominations) : [],
         message: store === 'localStorage' || readLocalCopy(key) === raw ? draftMessage : tabDraftMessage };
     } catch { /* The other storage or the server copy may still be available. */ }
   }
@@ -191,8 +206,8 @@ function readLocalCopy(key) {
 }
 
 function rememberDraft(draft) {
-  const { revision, answers, comment } = draft;
-  draft.raw = JSON.stringify({ revision, answers, comment });
+  const { revision, answers, comment, nomination_keys } = draft;
+  draft.raw = JSON.stringify({ revision, answers, comment, nomination_keys });
   let message = memoryDraftMessage;
   for (const store of stores) {
     try {
@@ -238,6 +253,7 @@ export class FinalVoting {
         !Array.isArray(data.ballots) || typeof data.accepting !== 'boolean' ||
         (data.role !== 'observer' && !data.criteria.length)) throw new Error('Invalid score sheet');
     if (this.data && (this.data.rubric !== data.rubric || this.data.criteria.length !== data.criteria.length ||
+        this.data.nomination_recommendations !== data.nomination_recommendations ||
         this.data.criteria.some(({ key }, i) => key !== data.criteria[i].key))) this.drafts.clear();
     this.regulationsUrl = await this.loadRegulations(regulationsDocument(data.regulations_url));
     this.data = data;
@@ -260,12 +276,15 @@ export class FinalVoting {
       return;
     }
     const saved = this.saved.get(id);
+    const canRecommend = this.data.nomination_recommendations === true;
     let draft = this.drafts.get(id);
     if (!draft) {
       const rubric = this.data.rubric;
       const key = 'jury.draft.v1/' + this.userId + '/' + rubric + '/' + id;
-      draft = { key, rubric, answers: { ...saved?.answers }, comment: saved?.comment ?? '', revision: saved?.revision ?? 0 };
-      const pending = readDraft(key, this.data.criteria);
+      const nomination_keys = canRecommend ? nominationSelection(saved?.nomination_keys) : [];
+      draft = { key, rubric, answers: { ...saved?.answers }, comment: saved?.comment ?? '', revision: saved?.revision ?? 0,
+        nomination_keys };
+      const pending = readDraft(key, this.data.criteria, nomination_keys, canRecommend);
       if (pending && sameBallot(pending, saved, this.data.criteria)) {
         forgetDraft({ key, raw: pending.raw });
       } else if (pending) {
@@ -294,25 +313,28 @@ export class FinalVoting {
       '<form><fieldset class="ballot-fields"' + (closed || draft.saving ? ' disabled' : '') + '><legend class="sr-only">Оценочный лист</legend>' +
       this.data.criteria.map(c => field(c, draft.answers, standardScale, updated, rules)).join('') +
       '<label class="comment-label" for="ballot-comment">Комментарий <small>по желанию</small></label>' +
-      '<textarea id="ballot-comment" name="comment" rows="3" maxlength="5000">\n' + escape(draft.comment) + '</textarea></fieldset>' +
+      '<textarea id="ballot-comment" name="comment" rows="3" maxlength="5000">\n' + escape(draft.comment) + '</textarea>' +
+      (canRecommend ? recommendationFields(draft.nomination_keys) : '') + '</fieldset>' +
       (closed ? '' : '<button class="primary save-ballot" type="submit"' + (draft.saving || draft.conflict ? ' disabled' : '') + '>' +
         (draft.saving ? 'Сохраняем…' : saved ? 'Сохранить изменения' : 'Сохранить оценку') + '</button>') +
       '<p class="ballot-feedback" role="status" aria-live="polite"></p>' +
       (draft.conflict ? '<button type="button" class="secondary" data-reload>' +
         (draft.rubricChanged ? 'Открыть действующий лист' : 'Загрузить сохранённую версию') + '</button>' : '') + '</form>' +
-      (updated ? nominationsGuide + rulesLink : ''));
+      (updated ? (canRecommend ? '' : nominationsGuide) + rulesLink : ''));
     const form = region.querySelector('form');
     const feedback = form.querySelector('[role="status"]');
     feedback.textContent = displayText(message);
     form.addEventListener('input', event => {
       const input = event.target;
       if (input.name === 'comment') draft.comment = input.value;
-      else if (input.type === 'radio') draft.answers[input.name] = input.value === 'na' ? null : Number(input.value);
+      else if (input.name === 'nomination_keys') {
+        draft.nomination_keys = Array.from(form.querySelectorAll('[name="nomination_keys"]:checked'), choice => choice.value);
+      } else if (input.type === 'radio') draft.answers[input.name] = input.value === 'na' ? null : Number(input.value);
       let message;
       if (!draft.conflict && sameBallot(draft, saved, this.data.criteria)) {
         forgetDraft(draft);
         message = 'Оценка сохранена.';
-      } else if (!saved && !draft.comment && !Object.keys(draft.answers).length) {
+      } else if (!saved && !draft.comment && !draft.nomination_keys.length && !Object.keys(draft.answers).length) {
         forgetDraft(draft);
         message = '';
       } else {
@@ -336,6 +358,7 @@ export class FinalVoting {
         await this.load();
         if (draft.rubricChanged && this.data.rubric === draft.rubric) {
           draft.answers = answersFor(draft.answers, this.data.criteria);
+          if (!this.data.nomination_recommendations) draft.nomination_keys = [];
           draft.rubricChanged = false;
           draft.conflict = draft.revision !== (this.saved.get(id)?.revision ?? 0);
           draft.message = draft.conflict ? conflictMessage : rememberDraft(draft);
@@ -364,7 +387,8 @@ export class FinalVoting {
     form.querySelector('[role="status"]').textContent = draft.message;
     try {
       const response = await this.call('jury_save_rubric_ballot', {
-        p_rubric: draft.rubric, p_work_id: id, p_answers: draft.answers, p_comment: draft.comment, p_revision: draft.revision
+        p_rubric: draft.rubric, p_work_id: id, p_answers: draft.answers, p_comment: draft.comment, p_revision: draft.revision,
+        ...(this.data.nomination_recommendations ? { p_nomination_keys: draft.nomination_keys } : {})
       });
       if (this.data.rubric !== draft.rubric) return;
       if (response.status === 412) {

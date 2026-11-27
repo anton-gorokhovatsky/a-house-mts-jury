@@ -1,4 +1,4 @@
-import { russianSpacing, typesetText } from './typography.js?v=b0749abb5147';
+import { russianSpacing, typesetText } from './typography.js?v=61207dc59179';
 
 export const displayText = russianSpacing;
 export const cabinetMarkup = html => typesetText(html, { formatFormText: true });
@@ -127,12 +127,14 @@ export function workNumber(index) {
   return String(index + 1).padStart(2, '0');
 }
 
+export const checkIcon = '<svg viewBox="0 0 65 65" focusable="false"><path d="m15.04 30.04 12.42 12.32 22.72-22.71" fill="none" stroke="currentColor" stroke-width="4"/></svg>';
+
 export function catalogueContent(works, href = id => '/works/' + id, scored = null, sheet, rulesUrl) {
   const links = works.map((work, index) => {
     const saved = scored?.has(work.id);
     let status = '';
     if (saved !== undefined) {
-      const tick = saved ? '<svg viewBox="0 0 65 65" focusable="false"><path d="m15.04 30.04 12.42 12.32 22.72-22.71" fill="none" stroke="currentColor" stroke-width="4"/></svg>' : '';
+      const tick = saved ? checkIcon : '';
       status = '<span class="work-mark' + (saved ? ' is-scored' : '') + '" aria-hidden="true">' + tick + '</span>' +
         '<span class="sr-only">' + (saved ? 'Оценена' : 'Ожидает оценки') + '</span>';
     }
