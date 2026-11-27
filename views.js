@@ -1,4 +1,4 @@
-import { russianSpacing, typesetText } from './typography.js?v=1a6a022f466b';
+import { russianSpacing, typesetText } from './typography.js?v=b0749abb5147';
 
 export const displayText = russianSpacing;
 export const cabinetMarkup = html => typesetText(html, { formatFormText: true });
@@ -75,7 +75,7 @@ function welcomeContent(sheet, rulesUrl) {
     instruction = '<p>Откройте работу, чтобы посмотреть листы проекта.</p>';
   } else {
     instruction = '<p>У вас есть доступ ко всем работам текущего этапа. <strong>До 9 декабря</strong> включительно вам нужно самостоятельно изучить все представленные концепции и выставить оценки по заданным критериям.</p>' +
-      '<p>После индивидуальной оценки всех работ мы проведем небольшую общую встречу с членами жюри в доме A-House 14 декабря. На ней мы обсудим фаворитов, посмотрим на проекты, которые набрали самые высокие оценки, и обсудим спорные и интересные решения.</p>' +
+      '<p>После индивидуальной оценки всех работ мы проведем небольшую общую встречу с членами жюри в доме <span class="word-group">A-House</span> 14 декабря. На ней мы обсудим фаворитов, посмотрим на проекты, которые набрали самые высокие оценки, и обсудим спорные и интересные решения.</p>' +
       '<p>На случай равенства голосов участников финальное решение принимает Председатель жюри.</p>';
   }
   const url = rulesUrl ?? regulationsDocument(sheet?.regulations_url);

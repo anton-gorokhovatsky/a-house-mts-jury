@@ -510,8 +510,8 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 }
 .catalogue .intro {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: calc(28 * var(--archive-unit));
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(2.5rem, calc(64 * var(--archive-unit)), 4rem);
   margin-block-start: calc(128 * var(--archive-unit));
 }
 .catalogue .step {
@@ -532,18 +532,18 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   display: flex;
   min-block-size: calc(132 * var(--archive-unit));
   align-items: flex-start;
-  justify-content: space-between;
   flex-wrap: wrap;
-  gap: .75rem;
+  gap: .75rem calc(64 * var(--archive-unit));
 }
 .catalogue .num { font: 400 calc(120 * var(--archive-unit)) / 1.1 var(--display-face); }
 .catalogue .step p {
   font-size: max(1.125rem, calc(34 * var(--archive-unit)));
   line-height: 1.2;
+  max-inline-size: 27em;
   margin-block-start: .85em;
   overflow-wrap: anywhere;
 }
-.catalogue .step-head + p { margin-block-start: calc(75 * var(--archive-unit)); }
+.catalogue .step-head + p { margin-block-start: clamp(1.5rem, calc(40 * var(--archive-unit)), 2.5rem); }
 .catalogue .step .materials { margin-block: 1.5rem 0; }
 .catalogue .rules-button {
   max-inline-size: 100%;
@@ -589,13 +589,12 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   .projects-section, .scene:not(.catalogue) { background-size: 100% 650px; }
   .catalogue .pagehead { min-block-size: auto; padding-block: 44px 50px; }
   .catalogue .pagehead h1 { font-size: clamp(2.125rem, 8vw, 3.5rem); line-height: 1.14; }
-  .catalogue .intro { grid-template-columns: minmax(0, 1fr); margin-block-start: 80px; gap: 40px; }
+  .catalogue .intro { margin-block-start: 80px; }
   .catalogue .step { padding-inline-start: 38px; }
   .catalogue .step::before { inset-block-start: 8px; inline-size: 16px; block-size: min(100%, 210px); }
   .catalogue .step-head { flex-direction: column; gap: 1rem; }
   .catalogue .num { font-size: 4.5rem; }
   .catalogue .step p { font-size: 1.3125rem; }
-  .catalogue .step-head + p { margin-block-start: 24px; }
   .catalogue .step-head .rules-button { inline-size: fit-content; margin-block-start: 0; }
   .catalogue .section-head :is(h1, h2) { font-size: clamp(1.75rem, 8.2vw, 3.625rem); }
   .catalogue .projects { padding-block: 45px 55px; }
@@ -652,7 +651,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 .work-ballot .ballot { margin-block-start: 0; max-inline-size: none; }
 .work-ballot .ballot > :not(h2) { max-inline-size: 45rem; }
 .work-ballot .ballot h2 {
-  margin-block-end: clamp(2rem, calc(100 * var(--archive-unit)), 6.25rem);
+  margin-block-end: clamp(1.25rem, calc(32 * var(--archive-unit)), 2rem);
   font-size: clamp(2.25rem, calc(110 * var(--archive-unit)), 6.875rem);
   line-height: 1.1;
   text-transform: uppercase;
@@ -710,7 +709,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   .work-gallery .sheet-strip:not(.single, .portrait) .sheet-preview { flex-basis: calc(100% - 28px); }
   .work-ballot { background: linear-gradient(180deg, #fff max(20%, calc(100% - 580px)), #dfe6f8 max(55%, calc(100% - 300px)), #929fc5); }
   .work-ballot > .content { padding-block: 44px 55px; }
-  .work-ballot .ballot h2 { margin-block-end: 60px; font-size: clamp(2.25rem, 7.65vw, 3.625rem); }
+  .work-ballot .ballot h2 { font-size: clamp(2.25rem, 7.65vw, 3.625rem); }
 
   .rating-scene .content { padding-block: 44px 56px; }
   .ranking-heading { display: block; }
