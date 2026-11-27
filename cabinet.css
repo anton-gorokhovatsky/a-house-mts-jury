@@ -378,9 +378,23 @@ form.login-card { --corner-extent: clamp(1.5rem, 2.35vw, 2rem); }
 
 .masthead-inner:has(nav) { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand brand" "menu exit"; gap: .4rem 1rem; }
 .masthead-inner:has(nav) img { grid-area: brand; justify-self: center; inline-size: min(100%, 210px); }
-.masthead-inner nav { grid-area: menu; display: flex; flex-wrap: wrap; gap: 0 1.2em; align-items: center; }
-.masthead-inner nav a { display: inline-flex; align-items: center; min-block-size: 2.75rem; }
-.masthead-inner nav a[aria-current="page"] { color: #fff; text-decoration-thickness: .12em; }
+.masthead-inner nav {
+  --menu-ink: #e0e7ff;
+  grid-area: menu;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.2em;
+  align-items: center;
+  color: var(--menu-ink);
+}
+.masthead-inner nav a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  text-decoration-color: var(--menu-ink);
+  text-decoration-thickness: .07em;
+}
+.masthead-inner nav a[aria-current="page"] { color: #fff; }
 .masthead-inner:has(nav) form { grid-area: exit; align-self: start; }
 @media (min-width: 52em) {
   .masthead-inner:has(nav) { grid-template-columns: minmax(9rem, 1fr) auto auto; grid-template-areas: "brand menu exit"; gap: 2rem; }
@@ -525,7 +539,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
     border-color: #53668c;
     color: #1e304f;
   }
-  .masthead nav a:hover { color: #e0e7ff; text-decoration-thickness: .12em; }
+  .masthead nav a:hover { color: #fff; }
   .sheet-preview:enabled:hover:not(:focus-visible) { outline: 2px solid #53668c; outline-offset: -2px; }
   @supports not (corner-shape: superellipse(1.7)) {
     @media (forced-colors: none) {
@@ -692,6 +706,17 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 @media (max-width: 600px) {
   .wrap { --gutter: 22px; }
   .masthead-inner { min-block-size: 136px; }
+  .masthead-inner:has(nav) {
+    min-block-size: 0;
+    gap: .375rem .5rem;
+    padding-block: .75rem .5rem;
+  }
+  .masthead-inner nav { column-gap: clamp(.5rem, 5vw - .5rem, 1rem); }
+  .masthead-inner nav a { min-inline-size: min(100%, 2.75rem); }
+  .masthead-inner:has(nav) button {
+    --label-shift: 0px;
+    padding-inline: .625rem;
+  }
   .hero { min-block-size: 700px; padding-block: 80px 50px; }
   .hero img { width: min(100%, 240px); }
   .hero h1 { margin-block-start: 145px; font-size: min(clamp(2.25rem, 10.14vw, 4.75rem), 11.9cqi); line-height: .95; }
@@ -872,8 +897,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 }
 .work-neighbors a {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--ballot-field-gap);
   min-inline-size: 0;
   max-inline-size: 100%;
@@ -883,7 +907,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 }
 .work-neighbors a[rel="next"] {
   margin-inline-start: auto;
-  align-items: flex-end;
+  flex-direction: row-reverse;
   text-align: end;
 }
 .work-neighbor-arrow {
