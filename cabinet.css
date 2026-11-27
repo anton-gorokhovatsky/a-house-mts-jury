@@ -217,7 +217,7 @@ h1, h2 { font-family: var(--display-face); font-weight: 400; letter-spacing: nor
 .ballot small { font-size: .9rem; font-weight: normal; }
 .ballot .scale { margin: .5rem 0; }
 .ballot .scale[open] { margin-block-end: 1.65em; }
-.scale > summary, .ballot-rules { padding-block: .65rem; cursor: pointer; width: fit-content; min-height: 2.75rem; }
+:is(.scale > summary, .ballot-rules, .ballot-reference-toggle) { padding-block: .65rem; cursor: pointer; width: fit-content; min-height: 2.75rem; }
 .scale > summary {
   display: grid;
   grid-template-columns: .55em minmax(0, 1fr);
@@ -292,7 +292,7 @@ criterion-title .whole-word { white-space: nowrap; }
 .score-choice input, .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .score-choice span { --control-inset: .45rem; --label-shift: .045em; display: grid; place-items: center; min-width: 2.75rem; min-height: 2.75rem; padding-inline: var(--control-inset); color: #161722; background: #fff; border: 1px solid #747b8d; }
 .score-choice input:checked + span { color: #fff; background: #20263a; border-color: #20263a; }
-.score-choice input:focus-visible + span, .ballot summary:focus-visible, .ballot textarea:focus-visible { outline: .18rem solid #315cc0; outline-offset: .15rem; }
+.score-choice input:focus-visible + span, .ballot :is(summary, .ballot-reference-toggle):focus-visible, .ballot textarea:focus-visible { outline: .18rem solid #315cc0; outline-offset: .15rem; }
 .no-site { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; width: fit-content; line-height: 1.4; }
 .no-site input { margin: 0; }
 .comment-label { display: block; margin-bottom: .5rem; }
@@ -308,26 +308,33 @@ criterion-title .whole-word { white-space: nowrap; }
 .recommendations legend { padding: 0; font-size: 1.25em; }
 .recommendations legend small { color: #414859; }
 .nomination-option {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-content: center;
+  align-items: start;
   gap: .65rem;
   min-block-size: 44px;
   padding-block: .3em;
   cursor: pointer;
   overflow-wrap: anywhere;
 }
-.nomination-option .work-mark { --mark-size: 1.5rem; margin-inline-start: 0; }
+.nomination-option .work-mark {
+  --mark-size: 1.5rem;
+  margin-inline-start: 0;
+  /* Centre on the ink of the first line, even when the label wraps. */
+  margin-block-start: calc((1lh - var(--mark-size)) / 2 - .08em);
+}
 .nomination-option input:not(:checked) + .work-mark svg { visibility: hidden; }
 .nomination-option input:focus-visible + .work-mark { outline: .18rem solid #315cc0; outline-offset: .15rem; }
 .nomination-option:has(input:disabled) { cursor: default; }
-.nominations .scale-body { max-inline-size: 60ch; }
+.nominations { max-inline-size: 60ch; margin-block-start: calc(2 * var(--ballot-field-gap)); }
 .nominations section + section { margin-block-start: var(--work-group-gap); }
 .nominations h3, .nominations h4 {
   margin: 0 0 var(--ballot-field-gap);
   font: 400 1.125em / 1.25 var(--body-face);
   text-wrap: pretty;
 }
-.nominations p { margin: 0; }
+.nominations p { margin: 0; line-height: 1.5; }
 .nominations p + p { margin-block-start: var(--ballot-field-gap); }
 
 /* The curve meets each straight edge with zero curvature. */
@@ -494,7 +501,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 
 @media (hover: hover) and (pointer: fine) {
   .primary:not(:disabled):hover { background-color: #32374d; }
-  :is(.return, .work-link, .ranking a, .ballot a, .ballot summary):hover {
+  :is(.return, .work-link, .ranking a, .ballot a, .ballot summary, .ballot-reference-toggle):hover {
     color: #273e72;
     text-decoration: underline;
     text-decoration-thickness: .1em;
@@ -646,6 +653,7 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 
 /* Work and ranking compositions use the archive’s proportions. */
 .work-scene {
+  --criterion-sidebar: 28.9%;
   --work-group-gap: clamp(1.125rem, 2.25vw, 1.75rem);
   --work-section-gap: clamp(1.75rem, 4vw, 3.5rem);
 }
@@ -695,6 +703,14 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   margin-block-end: -.1em;
   white-space: nowrap;
 }
+@container (width > 42rem) {
+  .work-pdf-group {
+    display: grid;
+    grid-template-columns: minmax(0, calc(var(--criterion-sidebar) - var(--work-group-gap))) max-content;
+    column-gap: var(--work-group-gap);
+  }
+  .work-gallery .work-pdf { max-inline-size: none; }
+}
 .work-return { margin-block: .75rem 0; }
 .work-ballot { background: linear-gradient(180deg, #fff max(20%, calc(100% - 840px)), #dfe6f8 max(55%, calc(100% - 460px)), #929fc5); }
 @media (width > 45em) {
@@ -715,7 +731,6 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 .work-ballot .recommendations { margin-block: var(--work-group-gap) 0; }
 /* In the archive the criterion number/weight and the score occupy separate columns. */
 .ballot-final {
-  --criterion-sidebar: 28.9%;
   --criterion-column-gap: 0px;
   --ballot-inset: calc(var(--criterion-sidebar) + var(--criterion-column-gap));
   --ballot-field-gap: .5rem;
@@ -739,10 +754,12 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 }
 .criterion-meta, .criterion-main { min-inline-size: 0; }
 .criterion-number {
+  --stem-bearing: .06em;
   display: block;
   font: 400 clamp(2.5rem, calc(120 * var(--archive-unit)), 7.5rem) / 1.1 var(--display-face);
 }
 .criterion-weight {
+  --stem-bearing: .075em;
   margin-block-start: var(--ballot-field-gap);
   color: #414859;
   font-size: var(--ballot-meta-size);
@@ -753,13 +770,15 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
 .criterion-main h3 {
   margin: 0;
   max-inline-size: min(100%, max(30rem, calc(688 * var(--archive-unit))));
+}
+:is(.criterion-main h3, .ballot-final .recommendations legend) {
   font: 400 max(1.25rem, calc(40 * var(--archive-unit))) / 1.1 var(--body-face);
 }
 .criterion-main criterion-title { display: block; }
 .criterion-scope { margin-block-start: var(--ballot-field-gap); font-size: var(--ballot-meta-size); line-height: 1.35; }
 .criterion-main .scale { margin-block: var(--ballot-field-gap) 0; }
 .ballot-final .scale[open] { margin-block-end: 0; }
-.ballot-final :is(.scale > summary, .ballot-rules) {
+.ballot-final :is(.scale > summary, .ballot-rules, .ballot-reference-toggle) {
   text-decoration: underline;
   text-underline-offset: .14em;
   border-radius: var(--control-corner);
@@ -796,11 +815,8 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   margin-inline-start: var(--ballot-inset);
   max-inline-size: 45rem;
 }
-.ballot-final :is(.comment-label, .recommendations legend) {
-  margin-block-end: var(--ballot-field-gap);
-  font-size: inherit;
-  line-height: 1.25;
-}
+.ballot-final :is(.comment-label, .recommendations legend) { margin-block-end: var(--ballot-field-gap); }
+.ballot-final .comment-label { line-height: 1.25; }
 .ballot-final :is(.comment-label, .recommendations legend) small {
   font-size: var(--ballot-meta-size);
   color: #414859;
@@ -814,18 +830,26 @@ body:has(.sheet-dialog[open]) { overflow: hidden; }
   margin-block-start: var(--work-group-gap);
 }
 .ballot-final .ballot-feedback:not(:empty) { margin-block-start: var(--ballot-field-gap); font-size: var(--ballot-meta-size); }
-.ballot-references {
-  display: grid;
-  row-gap: var(--ballot-field-gap);
-  margin-block-start: var(--work-section-gap);
+.ballot-references { margin-block-start: var(--work-section-gap); }
+.ballot-reference-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ballot-field-gap) clamp(1rem, 2.5vw, 2rem);
 }
-.ballot-references > .scale { margin-block: 0; }
+.ballot-reference-toggle {
+  border: 0;
+  background: none;
+  color: inherit;
+  padding-inline: 0;
+  text-align: start;
+}
 @media (max-width: 45em) {
   .ballot-final { --criterion-sidebar: 5rem; --criterion-column-gap: 1.125rem; --ballot-inset: 0px; }
   .work-ballot .ballot-final > h2 { font-size: clamp(2.25rem, 7.65vw, 3.625rem); }
   .criterion-number { font-size: 2.5rem; line-height: 1; }
   .criterion-main { padding-block-start: 0; }
-  .criterion-main h3 { line-height: 1.15; }
+  :is(.criterion-main h3, .ballot-final .recommendations legend) { line-height: 1.15; }
   .criterion-final .score-choices {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));

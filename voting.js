@@ -1,8 +1,8 @@
-import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=746c17f58051';
+import { cabinetMarkup, checkIcon, displayText, escape, heading, regulationsDocument } from './views.js?v=55b34da88db5';
 import {
   approachesIntro, approachRules, conceptIntro, conceptQuestions, conceptScale, conceptTitle,
   criterionTitles, distinction, distinctionHeading, nominations, nominationsTitle, technicalScope, technicalTitle
-} from './criteria.js?v=746c17f58051';
+} from './criteria.js?v=55b34da88db5';
 
 const generalScale = [
   'Отсутствует или невозможно оценить', 'Соответствует в минимальной степени',
@@ -24,9 +24,15 @@ const paragraphs = lines => lines.map(line => '<p>' + escape(line) + '</p>').joi
 const conceptGuide = disclosure('Подробнее о критерии', paragraphs([criterionTitles.concept, conceptIntro]) +
   '<ul class="guide-list">' + conceptQuestions.map(text => '<li>' + escape(text) + '</li>').join('') + '</ul>' +
   '<p>' + escape(approachesIntro) + ' <a href="' + approachRules + '" target="_blank" rel="noopener noreferrer">Пункт&nbsp;6.1 правил конкурса</a></p>');
-const nominationsGuide = disclosure(nominationsTitle,
-  nominations.map(item => '<section>' + heading(item.name, 3) + paragraphs(item.paragraphs) + '</section>').join('') +
-  '<section><h4>' + escape(distinctionHeading) + '</h4>' + paragraphs([distinction]) + '</section>', 'nominations');
+const nominationsGuide = nominations.map(item => '<section>' + heading(item.name, 3) + paragraphs(item.paragraphs) + '</section>').join('') +
+  '<section><h4>' + escape(distinctionHeading) + '</h4>' + paragraphs([distinction]) + '</section>';
+
+function ballotReferences(rulesLink) {
+  return '<aside class="ballot-references" aria-label="Справочные материалы"><div class="ballot-reference-links">' +
+    '<button type="button" class="ballot-reference-toggle" aria-expanded="false" aria-controls="nomination-criteria">' +
+    escape(nominationsTitle) + '</button>' + rulesLink + '</div>' +
+    '<div id="nomination-criteria" class="nominations" hidden>' + nominationsGuide + '</div></aside>';
+}
 
 function nominationSelection(keys) {
   return Array.isArray(keys) ? nominations.map(({ key }) => key).filter(key => keys.includes(key)) : [];
@@ -170,8 +176,8 @@ function field(criterion, answers, standardScale, updated, regulationsUrl) {
     const title = technical ? technicalTitle : criterion.key === 'concept' ? conceptTitle : criterion.label;
     const headingId = 'criterion-' + key;
     return '<fieldset class="criterion criterion-final" aria-labelledby="' + headingId + '"><div class="criterion-layout">' +
-      '<div class="criterion-meta"><span class="criterion-number" aria-hidden="true">' + escape(number) + '</span>' +
-      '<p class="criterion-weight">Вес <span>' + weight + '</span></p></div>' +
+      '<div class="criterion-meta"><span class="criterion-number" data-edges aria-hidden="true">' + escape(number) + '</span>' +
+      '<p class="criterion-weight" data-edges>Вес <span>' + weight + '</span></p></div>' +
       '<div class="criterion-main"><h3 id="' + headingId + '"><criterion-title>' + escape(title) + '</criterion-title></h3>' +
       (technical ? '<p class="criterion-scope">' + escape(technicalScope) + '</p>' : '') + specialScale + controls +
       '<div class="score-scale">' + scaleValues(scale, { name: feasibility ? 'Шкала реализуемости' : 'Шкала оценки концепции' }) +
@@ -337,7 +343,14 @@ export class FinalVoting {
       '<p class="ballot-feedback" role="status" aria-live="polite"></p>' +
       (draft.conflict ? '<button type="button" class="secondary" data-reload>' +
         (draft.rubricChanged ? 'Открыть действующий лист' : 'Загрузить сохранённую версию') + '</button>' : '') + '</div></form>' +
-      (updated ? '<aside class="ballot-references" aria-label="Справочные материалы">' + nominationsGuide + rulesLink + '</aside>' : ''));
+      (updated ? ballotReferences(rulesLink) : ''));
+    const nominationsToggle = region.querySelector('.ballot-reference-toggle');
+    nominationsToggle?.addEventListener('click', () => {
+      const guide = region.querySelector('#nomination-criteria');
+      const expanded = guide.hidden;
+      guide.hidden = !expanded;
+      nominationsToggle.setAttribute('aria-expanded', String(expanded));
+    });
     const form = region.querySelector('form');
     const feedback = form.querySelector('[role="status"]');
     feedback.textContent = displayText(message);
