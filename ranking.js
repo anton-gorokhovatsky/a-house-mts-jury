@@ -1,4 +1,4 @@
-import { cabinetMarkup, escape, heading, projectsId, workNumber } from './views.js?v=414b7989dde9';
+import { cabinetMarkup, escape, heading, projectsId, workNumber } from './views.js?v=ae28e7489f06';
 
 function columnTitle(criterion) {
   if (criterion.key === 'concept') return 'Концепция';
